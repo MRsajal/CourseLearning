@@ -1,0 +1,204 @@
+/* Course Materials Styles */
+.course-materials {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.materials-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--tertiary-color);
+}
+
+.materials-header h3 {
+  color: var(--primary-color);
+  margin: 0;
+}
+
+/* Materials List */
+.materials-list {
+  space-y: 1rem;
+}
+
+.no-materials {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  background: var(--background-color);
+  border-radius: 8px;
+}
+
+.material-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--background-color);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  transition: all 0.3s;
+  border-left: 4px solid var(--primary-color);
+}
+
+.material-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.material-icon {
+  font-size: 2rem;
+  min-width: 3rem;
+  text-align: center;
+}
+
+.material-info {
+  flex: 1;
+}
+
+.material-info h4 {
+  color: var(--primary-color);
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.material-description {
+  color: #666;
+  margin: 0.5rem 0;
+  line-height: 1.5;
+}
+
+.material-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.material-type {
+  background: var(--secondary-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.material-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+/* Students Management */
+.course-students-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.students-count {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.students-list {
+  space-y: 1rem;
+}
+
+.student-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--background-color);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.student-info strong {
+  color: var(--primary-color);
+}
+
+.student-info p {
+  margin: 0;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.enrollment-date {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+/* Analytics */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+}
+
+.analytics-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mock-chart {
+  padding: 1rem;
+  background-color: var(--background-color);
+  border-radius: 4px;
+  margin-top: 1rem;
+}
+
+.course-metric,
+.revenue-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--tertiary-color);
+}
+
+.revenue-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-top: 2px solid var(--primary-color);
+  margin-top: 1rem;
+  color: var(--primary-color);
+}
+
+/* Responsive Materials */
+@media (max-width: 768px) {
+  .material-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .material-actions {
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .material-meta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .student-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
