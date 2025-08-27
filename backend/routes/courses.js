@@ -1,0 +1,375 @@
+const express = require("express");
+const Course = require("../models/Course");
+const User = require("../models/User");
+const { authenticateToken, requireRole } = require("../middleware/auth");
+const { thumbnailUpload } = require("../middleware/upload");
+
+const router = express.Router();
+
+// Get all published courses (public)
+router.get("/courses", async (req, res) => {
+  try {
+    const { category, level, search } = req.query;
+    let filter = { isPublished: true };
+
+    if (category && category !== "all") {
+      filter.category = category;
+    }
+
+    if (level && level !== "all") {
+      filter.level = level;
+    }
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const courses = await Course.find(filter)
+      .populate("instructor", "name email")
+      .sort({ createdAt: -1 });
+
+    // Ensure instructorName is available for all courses
+    const coursesWithInstructorName = courses.map(course => {
+      const courseObj = course.toObject();
+      if (!courseObj.instructorName && courseObj.instructor) {
+        courseObj.instructorName = courseObj.instructor.name;
+      }
+      return courseObj;
+    });
+
+    res.json({
+      courses: coursesWithInstructorName,
+      count: coursesWithInstructorName.length,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+// Get single course
+router.get("/courses/:id", async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.id)
+      .populate("instructor", "name email")
+      .populate("enrolledStudents.student", "name email");
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    res.json({
+      course,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+// Create course (instructors only)
+router.post(
+  "/courses",
+  authenticateToken,
+  requireRole(["instructor", "admin"]),
+  thumbnailUpload.single("thumbnail"),
+  async (req, res) => {
+    try {
+      const {
+        title,
+        description,
+        category,
+        level,
+        duration,
+        price,
+        maxStudents,
+      } = req.body;
+
+      const instructorData = await User.findById(req.user.userId);
+
+      const course = new Course({
+        title,
+        description,
+        instructor: req.user.userId,
+        instructorName: instructorData.name,
+        category,
+        level,
+        duration,
+        price: parseFloat(price),
+        maxStudents: parseInt(maxStudents) || 100,
+        thumbnail: req.file ? `/uploads/thumbnails/${req.file.filename}` : "",
+      });
+
+      await course.save();
+
+      const populatedCourse = await Course.findById(course._id).populate(
+        "instructor",
+        "name email"
+      );
+
+      res.status(201).json({
+        course: populatedCourse,
+        message: "Course created successfully",
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Server error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+);
+
+// Get instructor's courses
+router.get(
+  "/instructor/courses",
+  authenticateToken,
+  requireRole(["instructor", "admin"]),
+  async (req, res) => {
+    try {
+      const courses = await Course.find({ instructor: req.user.userId })
+        .populate("enrolledStudents.student", "name email")
+        .sort({ createdAt: -1 });
+
+      res.json({
+        courses,
+        count: courses.length,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Server error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+);
+
+// Update course
+router.put(
+  "/courses/:id",
+  authenticateToken,
+  requireRole(["instructor", "admin"]),
+  thumbnailUpload.single("thumbnail"),
+  async (req, res) => {
+    try {
+      const course = await Course.findById(req.params.id);
+
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      // Check if user owns the course or is admin
+      if (
+        course.instructor.toString() !== req.user.userId &&
+        req.user.role !== "admin"
+      ) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const updateData = { ...req.body };
+      if (req.file) {
+        updateData.thumbnail = `/uploads/thumbnails/${req.file.filename}`;
+      }
+
+      const updatedCourse = await Course.findByIdAndUpdate(
+        req.params.id,
+        updateData,
+        { new: true }
+      ).populate("instructor", "name email");
+
+      res.json({
+        course: updatedCourse,
+        message: "Course updated successfully",
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Server error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+);
+
+// Publish/Unpublish course
+router.patch(
+  "/courses/:id/publish",
+  authenticateToken,
+  requireRole(["instructor", "admin"]),
+  async (req, res) => {
+    try {
+      const course = await Course.findById(req.params.id);
+
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      if (
+        course.instructor.toString() !== req.user.userId &&
+        req.user.role !== "admin"
+      ) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      course.isPublished = !course.isPublished;
+      await course.save();
+
+      res.json({
+        message: `Course ${
+          course.isPublished ? "published" : "unpublished"
+        } successfully`,
+        course,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Server error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+);
+
+// Enroll in course (students only)
+router.post(
+  "/courses/:id/enroll",
+  authenticateToken,
+  requireRole(["student"]),
+  async (req, res) => {
+    try {
+      const course = await Course.findById(req.params.id);
+
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      if (!course.isPublished) {
+        return res.status(400).json({ message: "Course is not published" });
+      }
+
+      // Check if already enrolled
+      const alreadyEnrolled = course.enrolledStudents.some(
+        (enrollment) => enrollment.student.toString() === req.user.userId
+      );
+
+      if (alreadyEnrolled) {
+        return res
+          .status(400)
+          .json({ message: "Already enrolled in this course" });
+      }
+
+      // Check if course is full
+      if (course.enrolledStudents.length >= course.maxStudents) {
+        return res.status(400).json({ message: "Course is full" });
+      }
+
+      course.enrolledStudents.push({
+        student: req.user.userId,
+        enrolledAt: new Date(),
+      });
+
+      await course.save();
+
+      res.json({
+        message: "Successfully enrolled in course",
+        course,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Server error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+);
+
+// Get student's enrolled courses
+router.get(
+  "/student/courses",
+  authenticateToken,
+  requireRole(["student"]),
+  async (req, res) => {
+    try {
+      const courses = await Course.find({
+        "enrolledStudents.student": req.user.userId,
+      }).populate("instructor", "name email");
+
+      // Ensure instructorName is available for all courses
+      const coursesWithInstructorName = courses.map(course => {
+        const courseObj = course.toObject();
+        if (!courseObj.instructorName && courseObj.instructor) {
+          courseObj.instructorName = courseObj.instructor.name;
+        }
+        return courseObj;
+      });
+
+      res.json({
+        courses: coursesWithInstructorName,
+        count: coursesWithInstructorName.length,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Server error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+);
+
+// Delete course
+router.delete(
+  "/courses/:id",
+  authenticateToken,
+  requireRole(["instructor", "admin"]),
+  async (req, res) => {
+    try {
+      const course = await Course.findById(req.params.id);
+
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      if (
+        course.instructor.toString() !== req.user.userId &&
+        req.user.role !== "admin"
+      ) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      await Course.findByIdAndDelete(req.params.id);
+      res.json({
+        message: "Course deleted successfully",
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Server error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+);
+
+module.exports = router;

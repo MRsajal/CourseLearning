@@ -8,6 +8,10 @@ const courseSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  instructorName: {
+    type: String,
+    required: true,
+  },
   category: {
     type: String,
     required: true,
