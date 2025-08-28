@@ -6,7 +6,7 @@ const Navbar = ({ user, logout }) => {
   return (
     <nav className="navbar">
       <div className="nav-content">
-        <Link to="/" className="logo">
+        <Link to="/" className="logo-nav">
           EduPlatform
         </Link>
         <div className="nav-links">

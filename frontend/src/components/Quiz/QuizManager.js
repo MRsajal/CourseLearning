@@ -159,32 +159,9 @@ const QuizManager = ({ courseId, user, onQuizCreated }) => {
       });
       
       if (response.data.certificate) {
-        // Try to download using axios with proper headers
+        // Open certificate PDF in new window using utility function
         const certificateId = response.data.certificate.certificateId;
-        
-        try {
-          const pdfResponse = await axios.get(`/api/certificate/${certificateId}/pdf`, {
-            headers: { Authorization: `Bearer ${token}` },
-            responseType: 'blob' // Important for handling binary data
-          });
-          
-          // Create blob URL and download
-          const blob = new Blob([pdfResponse.data], { type: 'text/html' });
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `Certificate-${certificateId}.html`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-          
-          setMessage("✅ Certificate downloaded successfully!");
-        } catch (pdfError) {
-          // Fallback: open in new window with token as query param
-          console.log("Fallback to query param method");
-          openBackendUrl(`/api/certificate/${certificateId}/pdf`, { token });
-        }
+        openBackendUrl(`/api/certificate/${certificateId}/pdf`, { token });
       } else {
         setMessage("No certificate available. Complete the final quiz to earn a certificate.");
       }

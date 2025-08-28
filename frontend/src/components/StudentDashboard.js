@@ -1,4 +1,4 @@
-import React, { act, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router";
 import CourseList from "./Course/CourseList";
@@ -15,6 +15,18 @@ const StudentDashboard = ({ user }) => {
     if (activeTab === "enrolled") {
       fetchEnrolledCourses();
     }
+  }, [activeTab]);
+
+  // Also refresh enrolled courses when component mounts or when user navigates back
+  useEffect(() => {
+    const handleFocus = () => {
+      if (activeTab === "enrolled") {
+        fetchEnrolledCourses();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [activeTab]);
 
   const fetchEnrolledCourses = async () => {
@@ -49,7 +61,16 @@ const StudentDashboard = ({ user }) => {
       case "enrolled":
         return (
           <div className="enrolled-courses">
-            <h3>My Enrolled Courses</h3>
+            <div className="enrolled-courses-header">
+              <h3>My Enrolled Courses</h3>
+              <button 
+                onClick={fetchEnrolledCourses} 
+                className="btn-secondary btn-refresh"
+                disabled={loading}
+              >
+                {loading ? "⏳ Refreshing..." : "🔄 Refresh"}
+              </button>
+            </div>
             {loading ? (
               <div className="loading">Loading your courses...</div>
             ) : enrolledCourses.length === 0 ? (
@@ -86,7 +107,12 @@ const StudentDashboard = ({ user }) => {
                         <div className="progress-bar">
                           <div className="progress-fill" style={{ width: `${course.progressPercentage || 0}%` }}></div>
                         </div>
-                        <span className="progress-text">{course.progressPercentage || 0}% Complete</span>
+                        <div className="progress-details">
+                          <span className="progress-text">{course.progressPercentage || 0}% Complete</span>
+                          <span className="progress-materials">
+                            {course.completedMaterials || 0}/{course.totalMaterials || 0} Materials
+                          </span>
+                        </div>
                       </div>
                       <Link to={`/course/${course._id}/learn`} className="btn-continue">
                         Continue Learning

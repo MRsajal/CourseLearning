@@ -313,21 +313,62 @@ router.get(
         "enrolledStudents.student": req.user.userId,
       }).populate("instructor", "name email");
 
-      // Ensure instructorName is available for all courses
-      const coursesWithInstructorName = courses.map(course => {
-        const courseObj = course.toObject();
-        if (!courseObj.instructorName && courseObj.instructor) {
-          courseObj.instructorName = courseObj.instructor.name;
-        }
-        return courseObj;
-      });
+      // Get progress for each course
+      const coursesWithProgress = await Promise.all(
+        courses.map(async (course) => {
+          const courseObj = course.toObject();
+          
+          // Ensure instructorName is available
+          if (!courseObj.instructorName && courseObj.instructor) {
+            courseObj.instructorName = courseObj.instructor.name;
+          }
+
+          // Get student progress for this course
+          const StudentProgress = require("../models/StudentProgress");
+          const CourseMaterial = require("../models/CourseMaterial");
+          
+          let progress = await StudentProgress.findOne({
+            student: req.user.userId,
+            course: course._id,
+          });
+
+          if (!progress) {
+            // Create progress record if it doesn't exist
+            progress = new StudentProgress({
+              student: req.user.userId,
+              course: course._id,
+            });
+            await progress.save();
+          }
+
+          // Get total materials count for this course
+          const totalMaterials = await CourseMaterial.countDocuments({
+            course: course._id,
+            isActive: true,
+          });
+
+          // Update progress calculation
+          await progress.updateProgress();
+          await progress.save();
+
+          // Add progress information to course object
+          courseObj.progressPercentage = progress.progressPercentage || 0;
+          courseObj.totalTimeSpent = progress.totalTimeSpent || 0;
+          courseObj.completedMaterials = progress.completedMaterials.length;
+          courseObj.totalMaterials = totalMaterials;
+          courseObj.lastAccessedAt = progress.lastAccessedAt;
+
+          return courseObj;
+        })
+      );
 
       res.json({
-        courses: coursesWithInstructorName,
-        count: coursesWithInstructorName.length,
+        courses: coursesWithProgress,
+        count: coursesWithProgress.length,
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
+      console.error("Error fetching student courses:", error);
       res.status(500).json({
         message: "Server error",
         error: error.message,
