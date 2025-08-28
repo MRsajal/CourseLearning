@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import "../CSS/CourseMaterials.css";
 import "../CSS/Button.css";
@@ -17,10 +17,7 @@ const CourseMaterials = ({ courseId, user, isOwner = false }) => {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    fetchMaterials();
-  }, [courseId]);
-  const fetchMaterials = async () => {
+  const fetchMaterials = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(`/api/courses/${courseId}/materials`, {
@@ -28,14 +25,20 @@ const CourseMaterials = ({ courseId, user, isOwner = false }) => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setMaterials(response.data);
+      // Backend returns { materials: [...], count: number, timestamp: string }
+      setMaterials(response.data.materials || []);
     } catch (error) {
       console.error("Error fetching materials:", error);
       setMessage("Error loading materials");
+      setMaterials([]); // Set empty array on error to prevent crashes
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId]);
+
+  useEffect(() => {
+    fetchMaterials();
+  }, [fetchMaterials]);
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     setSelectedFile(file);

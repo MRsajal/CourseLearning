@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
 import axios from "axios";
 import "../CSS/CourseLearning.css";
+import "../CSS/Quiz.css";
+import QuizManager from "../Quiz/QuizManager";
 
 const CourseLearning = ({ user }) => {
   const { courseId } = useParams();
@@ -12,33 +14,33 @@ const CourseLearning = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [completingMaterial, setCompletingMaterial] = useState(null);
   const [message, setMessage] = useState("");
+  const [activeSection, setActiveSection] = useState("materials");
 
-  useEffect(() => {
-    fetchCourseData();
-  }, [courseId]);
-
-  const fetchCourseData = async () => {
+  const fetchCourseData = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `/api/courses/${courseId}/learn`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get(`/api/courses/${courseId}/learn`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setCourseData(response.data.course);
-      setMaterials(response.data.materials);
+      setMaterials(response.data.materials || []);
       setProgress(response.data.progress);
     } catch (error) {
       console.error("Error fetching course data:", error);
       console.error("Error details:", error.response?.data);
-      setMessage(error.response?.data?.message || "Failed to load course data.");
+      setMessage(
+        error.response?.data?.message || "Failed to load course data."
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId]);
+
+  useEffect(() => {
+    fetchCourseData();
+  }, [fetchCourseData]);
   const handleMaterialCompletion = async (materialId, isCompleted) => {
     setCompletingMaterial(materialId);
     try {
@@ -208,104 +210,132 @@ const CourseLearning = ({ user }) => {
 
       <div className="learning-content">
         <div className="materials-section">
-          <h2>Course Materials</h2>
+          <div className="section-tabs">
+            <button
+              className={`section-tab ${
+                activeSection === "materials" ? "active" : ""
+              }`}
+              onClick={() => setActiveSection("materials")}
+            >
+              Course Materials ({materials.length})
+            </button>
+            <button
+              className={`section-tab ${
+                activeSection === "quizzes" ? "active" : ""
+              }`}
+              onClick={() => setActiveSection("quizzes")}
+            >
+              Quizzes & Assessments
+            </button>
+          </div>
 
-          {materials.length === 0 ? (
-            <div className="no-materials">
-              <p>No materials available for this course yet.</p>
-            </div>
-          ) : (
-            <div className="materials-list">
-              {materials.map((material, index) => (
-                <div
-                  key={material._id}
-                  className={`learning-material ${
-                    material.isCompleted ? "completed" : ""
-                  }`}
-                >
-                  <div className="material-header">
-                    <div className="material-icon">
-                      {getFileIcon(material.type)}
-                    </div>
+          {activeSection === "materials" && (
+            <>
+              <h2>Course Materials</h2>
 
-                    <div className="material-info">
-                      <h3>{material.title}</h3>
-                      {material.description && (
-                        <p className="material-description">
-                          {material.description}
-                        </p>
-                      )}
-                      <div className="material-meta">
-                        <span className="material-type">
-                          {material.type.toUpperCase()}
-                        </span>
-                        <span className="material-size">
-                          {formatFileSize(material.fileSize)}
-                        </span>
-                        {material.isCompleted && (
-                          <span className="completed-badge">
-                            ✓ Completed{" "}
-                            {material.timeSpent > 0 &&
-                              `(${formatDuration(material.timeSpent)})`}
-                          </span>
+              {materials.length === 0 ? (
+                <div className="no-materials">
+                  <p>No materials available for this course yet.</p>
+                </div>
+              ) : (
+                <div className="materials-list">
+                  {Array.isArray(materials) &&
+                    materials.map((material, index) => (
+                      <div
+                        key={material._id}
+                        className={`learning-material ${
+                          material.isCompleted ? "completed" : ""
+                        }`}
+                      >
+                        <div className="material-header">
+                          <div className="material-icon">
+                            {getFileIcon(material.type)}
+                          </div>
+
+                          <div className="material-info">
+                            <h3>{material.title}</h3>
+                            {material.description && (
+                              <p className="material-description">
+                                {material.description}
+                              </p>
+                            )}
+                            <div className="material-meta">
+                              <span className="material-type">
+                                {material.type.toUpperCase()}
+                              </span>
+                              <span className="material-size">
+                                {formatFileSize(material.fileSize)}
+                              </span>
+                              {material.isCompleted && (
+                                <span className="completed-badge">
+                                  ✓ Completed{" "}
+                                  {material.timeSpent > 0 &&
+                                    `(${formatDuration(material.timeSpent)})`}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="material-number">{index + 1}</div>
+                        </div>
+
+                        <div className="material-actions">
+                          <button
+                            className="btn-view"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              const token = localStorage.getItem("token");
+                              if (token) {
+                                // Use full backend URL to bypass React Router
+                                const backendUrl = `http://localhost:5000/api/materials/${material._id}/download?token=${token}`;
+                                window.open(backendUrl, "_blank");
+                              } else {
+                                alert("Please login to view materials");
+                              }
+                            }}
+                          >
+                            {material.type === "video" ? "🎥 Watch" : "📖 View"}
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              handleMaterialCompletion(
+                                material._id,
+                                material.isCompleted
+                              )
+                            }
+                            disabled={completingMaterial === material._id}
+                            className={`btn-complete ${
+                              material.isCompleted ? "completed" : ""
+                            }`}
+                          >
+                            {completingMaterial === material._id
+                              ? "Updating..."
+                              : material.isCompleted
+                              ? "✓ Completed"
+                              : "Mark Complete"}
+                          </button>
+                        </div>
+
+                        {material.isCompleted && material.completedAt && (
+                          <div className="completion-info">
+                            <small>
+                              Completed on{" "}
+                              {new Date(
+                                material.completedAt
+                              ).toLocaleDateString()}
+                            </small>
+                          </div>
                         )}
                       </div>
-                    </div>
-
-                    <div className="material-number">{index + 1}</div>
-                  </div>
-
-                  <div className="material-actions">
-                    <a
-                      href={`/api/materials/${material._id}/download`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-view"
-                      onClick={(e) => {
-                        const token = localStorage.getItem("token");
-                        if (token) {
-                          e.preventDefault();
-                          window.open(
-                            `/api/materials/${material._id}/download?token=${token}`,
-                            "_blank"
-                          );
-                        }
-                      }}
-                    >
-                      {material.type === "video" ? "🎥 Watch" : "📖 View"}
-                    </a>
-
-                    <button
-                      onClick={() =>
-                        handleMaterialCompletion(
-                          material._id,
-                          material.isCompleted
-                        )
-                      }
-                      disabled={completingMaterial === material._id}
-                      className={`btn-complete ${
-                        material.isCompleted ? "completed" : ""
-                      }`}
-                    >
-                      {completingMaterial === material._id
-                        ? "Updating..."
-                        : material.isCompleted
-                        ? "✓ Completed"
-                        : "Mark Complete"}
-                    </button>
-                  </div>
-
-                  {material.isCompleted && material.completedAt && (
-                    <div className="completion-info">
-                      <small>
-                        Completed on{" "}
-                        {new Date(material.completedAt).toLocaleDateString()}
-                      </small>
-                    </div>
-                  )}
+                    ))}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
+          )}
+
+          {activeSection === "quizzes" && (
+            <QuizManager courseId={courseId} user={user} />
           )}
         </div>
 
@@ -342,14 +372,6 @@ const CourseLearning = ({ user }) => {
               </div>
             </div>
           </div>
-
-          {progress?.progressPercentage === 100 && (
-            <div className="completion-certificate">
-              <h3>🎉 Congratulations!</h3>
-              <p>You have completed this course!</p>
-              <button className="btn-certificate">Download Certificate</button>
-            </div>
-          )}
         </div>
       </div>
     </div>

@@ -46,7 +46,7 @@ router.get(
       }
 
       // Calculate current progress
-      await progress.calculateProgress();
+      await progress.updateProgress();
       await progress.save();
 
       res.json({
@@ -124,7 +124,7 @@ router.post(
       progress.lastAccessedAt = new Date();
 
       // Calculate and update progress percentage
-      await progress.calculateProgress();
+      await progress.updateProgress();
       await progress.save();
 
       const populatedProgress = await StudentProgress.findById(
@@ -184,7 +184,7 @@ router.delete(
         progress.lastAccessedAt = new Date();
 
         // Recalculate progress percentage
-        await progress.calculateProgress();
+        await progress.updateProgress();
         await progress.save();
       }
 

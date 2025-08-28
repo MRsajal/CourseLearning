@@ -24,12 +24,16 @@ const authRoutes = require("./routes/auth");
 const courseRoutes = require("./routes/courses");
 const materialRoutes = require("./routes/materials");
 const progressRoutes = require("./routes/progress");
+const quizRoutes = require("./routes/quiz");
+const certificateRoutes = require("./routes/certificate");
 
 // Use routes
 app.use("/api", authRoutes);
 app.use("/api", courseRoutes);
 app.use("/api", materialRoutes);
 app.use("/api", progressRoutes);
+app.use("/api", quizRoutes);
+app.use("/api/certificate", certificateRoutes);
 
 // Health check route
 app.get("/api/health", (req, res) => {

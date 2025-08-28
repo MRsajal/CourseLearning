@@ -1,5 +1,7 @@
 const express = require("express");
 const fs = require("fs");
+const path = require("path");
+const jwt = require("jsonwebtoken");
 const CourseMaterial = require("../models/CourseMaterial");
 const Course = require("../models/Course");
 const { authenticateToken, requireRole } = require("../middleware/auth");
@@ -225,10 +227,30 @@ router.delete(
 // Serve course material files (with access control)
 router.get(
   "/materials/:materialId/download",
-  authenticateToken,
   async (req, res) => {
     try {
       const { materialId } = req.params;
+      
+      // Get token from either Authorization header or query parameter
+      let token = null;
+      const authHeader = req.headers["authorization"];
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        token = authHeader.split(" ")[1];
+      } else if (req.query.token) {
+        token = req.query.token;
+      }
+
+      if (!token) {
+        return res.status(401).json({ message: "Access token required" });
+      }
+
+      // Verify token manually since we're not using the middleware
+      let user;
+      try {
+        user = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret");
+      } catch (err) {
+        return res.status(403).json({ message: "Invalid token" });
+      }
 
       const material = await CourseMaterial.findById(materialId).populate(
         "course"
@@ -240,11 +262,11 @@ router.get(
       // Check if user has access to this material
       const course = material.course;
       const hasAccess =
-        course.instructor.toString() === req.user.userId ||
-        req.user.role === "admin" ||
-        (req.user.role === "student" &&
+        course.instructor.toString() === user.userId ||
+        user.role === "admin" ||
+        (user.role === "student" &&
           course.enrolledStudents.some(
-            (enrollment) => enrollment.student.toString() === req.user.userId
+            (enrollment) => enrollment.student.toString() === user.userId
           ));
 
       if (!hasAccess) {
@@ -253,20 +275,54 @@ router.get(
 
       // Check if file exists
       if (!fs.existsSync(material.filePath)) {
+        console.error("File not found at path:", material.filePath);
         return res.status(404).json({ message: "File not found" });
       }
 
-      // Set appropriate headers
-      res.setHeader("Content-Type", material.mimeType);
-      res.setHeader(
-        "Content-Disposition",
-        `inline; filename="${material.fileName}"`
-      );
+      console.log("Serving file:", material.fileName, "Type:", material.type, "MIME:", material.mimeType);
 
-      // Stream the file
+      // Set appropriate headers for PDF viewing
+      if (material.type === "pdf" || material.mimeType === "application/pdf") {
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+          "Content-Disposition",
+          `inline; filename="${material.fileName}"`
+        );
+        res.setHeader("Cache-Control", "public, max-age=3600");
+        res.setHeader("Accept-Ranges", "bytes");
+      } else if (material.type === "video") {
+        res.setHeader("Content-Type", material.mimeType);
+        res.setHeader(
+          "Content-Disposition",
+          `inline; filename="${material.fileName}"`
+        );
+        res.setHeader("Accept-Ranges", "bytes");
+      } else {
+        // For other document types, offer as download
+        res.setHeader("Content-Type", material.mimeType);
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${material.fileName}"`
+        );
+      }
+
+      // Get file stats for proper content-length header
+      const stat = fs.statSync(material.filePath);
+      res.setHeader("Content-Length", stat.size);
+
+      // Stream the file with error handling
       const fileStream = fs.createReadStream(material.filePath);
+      
+      fileStream.on("error", (err) => {
+        console.error("Error streaming file:", err);
+        if (!res.headersSent) {
+          res.status(500).json({ message: "Error reading file" });
+        }
+      });
+
       fileStream.pipe(res);
     } catch (error) {
+      console.error("Download error:", error);
       res.status(500).json({
         message: "Server error",
         error: error.message,

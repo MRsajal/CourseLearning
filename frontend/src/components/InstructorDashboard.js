@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import CreateCourse from "./Course/CreateCourse";
 import CourseMaterials from "./Course/CourseMaterials";
 import "./CSS/Dashboard.css";
 import "./CSS/Table.css";
 import "./CSS/Button.css";
+import QuizManager from "./Quiz/QuizManager";
 
 const InstructorDashboard = ({ user }) => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -18,30 +19,7 @@ const InstructorDashboard = ({ user }) => {
     totalRevenue: 0,
   });
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
-
-  useEffect(() => {
-    calculateStats();
-  }, [courses]);
-
-  const fetchCourses = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get("/api/instructor/courses", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setCourses(response.data);
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculateStats = () => {
+  const calculateStats = useCallback(() => {
     const totalCourses = courses.length;
     const publishedCourses = courses.filter(
       (course) => course.isPublished
@@ -60,7 +38,32 @@ const InstructorDashboard = ({ user }) => {
       totalStudents,
       totalRevenue,
     });
+  }, [courses]);
+
+  const fetchCourses = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("/api/instructor/courses", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Backend returns { courses: [...], count: number, timestamp: string }
+      setCourses(response.data.courses || []);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      setCourses([]); // Set empty array on error to prevent crashes
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  useEffect(() => {
+    calculateStats();
+  }, [calculateStats]);
 
   const toggleCoursePublish = async (courseId, currentStatus) => {
     try {
@@ -241,6 +244,15 @@ const InstructorDashboard = ({ user }) => {
                               Materials
                             </button>
                             <button
+                              onClick={() => {
+                                setSelectedCourse(course);
+                                setActiveTab("quizzes"); // Add this
+                              }}
+                              className="btn-sm btn-quiz"
+                            >
+                              Quizzes
+                            </button>
+                            <button
                               onClick={() =>
                                 toggleCoursePublish(
                                   course._id,
@@ -255,7 +267,6 @@ const InstructorDashboard = ({ user }) => {
                             >
                               {course.isPublished ? "Unpublish" : "Publish"}
                             </button>
-                            <button className="btn-sm btn-edit">Edit</button>
                             <button
                               onClick={() => deleteCourse(course._id)}
                               className="btn-sm btn-delete"
@@ -282,7 +293,35 @@ const InstructorDashboard = ({ user }) => {
             }}
           />
         );
-
+      case "quizzes":
+        return (
+          <div className="course-quiz-management">
+            {selectedCourse ? (
+              <>
+                <div className="quiz-management-header">
+                  <h3>Quizzes for: {selectedCourse.title}</h3>
+                  <button
+                    onClick={() => setActiveTab("courses")}
+                    className="btn-secondary"
+                  >
+                    Back to Courses
+                  </button>
+                </div>
+                <QuizManager courseId={selectedCourse._id} user={user} />
+              </>
+            ) : (
+              <div className="no-course-selected">
+                <p>Please select a course to manage quizzes.</p>
+                <button
+                  onClick={() => setActiveTab("courses")}
+                  className="btn-primary"
+                >
+                  Go to Courses
+                </button>
+              </div>
+            )}
+          </div>
+        );
       case "students":
         return (
           <div className="instructor-students">
@@ -441,6 +480,22 @@ const InstructorDashboard = ({ user }) => {
         >
           Create Course
         </button>
+        {selectedCourse && (
+          <>
+            <button
+              className={`tab-btn ${activeTab === "materials" ? "active" : ""}`}
+              onClick={() => setActiveTab("materials")}
+            >
+              Materials: {selectedCourse.title}
+            </button>
+            <button
+              className={`tab-btn ${activeTab === "quizzes" ? "active" : ""}`}
+              onClick={() => setActiveTab("quizzes")}
+            >
+              Quizzes: {selectedCourse.title}
+            </button>
+          </>
+        )}
         <button
           className={`tab-btn ${activeTab === "students" ? "active" : ""}`}
           onClick={() => setActiveTab("students")}
