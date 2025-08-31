@@ -1,0 +1,644 @@
+/* Live Class Styles - Completely isolated to prevent global conflicts */
+
+/* Override any global styles only within live class components */
+.live-class-lobby *,
+.live-class-room * {
+  box-sizing: border-box;
+}
+
+.live-class-lobby {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--background-color), #f8f9fa);
+  padding: 2rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+}
+
+.lobby-content {
+  background: white;
+  padding: 3rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+.lobby-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.lobby-header .back-btn {
+  position: absolute;
+  left: 0;
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.lobby-header .back-btn:hover {
+  background: #5a6268;
+  transform: translateX(-2px);
+}
+
+.lobby-content h2 {
+  color: var(--primary-color);
+  margin: 0;
+  font-size: 2rem;
+}
+
+.class-info {
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.class-info p {
+  margin: 0.5rem 0;
+  color: #666;
+}
+
+.pre-join-controls {
+  margin-bottom: 2rem;
+}
+
+.media-preview {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.preview-video {
+  width: 100%;
+  max-width: 300px;
+  height: 200px;
+  background: #000;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.media-controls {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.join-btn {
+  background: linear-gradient(
+    135deg,
+    var(--primary-color),
+    var(--secondary-color)
+  );
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.join-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(137, 168, 178, 0.4);
+}
+
+/* Live Class Room */
+.live-class-room {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #1a1a1a;
+  color: white;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+}
+
+/* Header */
+.class-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  background: #2d2d2d;
+  border-bottom: 1px solid #444;
+}
+
+.class-header .back-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  justify-self: start;
+}
+
+.class-header .back-btn:hover {
+  background: #5a6268;
+  transform: translateX(-2px);
+}
+
+.class-info {
+  justify-self: start;
+}
+
+.class-info h3 {
+  margin: 0 0 0.5rem 0;
+  color: white;
+}
+
+.class-controls {
+  justify-self: end;
+}
+
+.leave-btn {
+  justify-self: end;
+}
+
+.class-status {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.live-indicator {
+  color: #ff4444;
+  font-weight: 600;
+}
+
+.participants-count {
+  color: #4caf50;
+}
+
+.recording-indicator {
+  color: #ff6b35;
+  font-weight: 600;
+}
+
+.class-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.control-btn {
+  background: #444;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.control-btn:hover {
+  background: #555;
+}
+
+.control-btn.active {
+  background: var(--primary-color);
+}
+
+.control-btn.inactive {
+  background: #666;
+  opacity: 0.7;
+}
+
+.control-btn.danger {
+  background: #e74c3c;
+}
+
+.control-btn.danger:hover {
+  background: #c0392b;
+}
+
+.leave-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.leave-btn:hover {
+  background: #c0392b;
+}
+
+/* Main Content */
+.class-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.live-class-main-content {
+  flex: 1;
+  background: #000;
+  position: relative;
+}
+
+/* Video Grid */
+.video-grid {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-video {
+  flex: 1;
+  position: relative;
+  background: #000;
+}
+
+.local-video,
+.remote-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-info {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.role-badge {
+  background: var(--primary-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.remote-videos {
+  display: flex;
+  height: 150px;
+  background: #111;
+  overflow-x: auto;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.remote-video-container {
+  position: relative;
+  min-width: 200px;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Screen Share */
+.screen-share-view {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.screen-placeholder {
+  text-align: center;
+  color: #666;
+  font-size: 1.2rem;
+}
+
+/* Sidebar */
+.class-sidebar {
+  width: 350px;
+  background: #2d2d2d;
+  border-left: 1px solid #444;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-section {
+  border-bottom: 1px solid #444;
+  flex-shrink: 0;
+}
+
+.sidebar-section h4 {
+  margin: 0;
+  padding: 1rem;
+  background: #333;
+  color: white;
+  font-size: 1rem;
+}
+
+/* Participants */
+.participants-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.participant-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #444;
+}
+
+.participant-name {
+  color: white;
+}
+
+.hand-raised {
+  color: #ffd700;
+  font-size: 1.2rem;
+}
+
+/* Chat */
+.chat-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.chat-message {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  background: #333;
+}
+
+.chat-message.system {
+  background: #444;
+  font-style: italic;
+  color: #ccc;
+}
+
+.chat-username {
+  font-weight: 600;
+  color: var(--secondary-color);
+  margin-right: 0.5rem;
+}
+
+.chat-text {
+  color: white;
+}
+
+.chat-time {
+  display: block;
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 0.25rem;
+}
+
+.system-message {
+  color: #ffd700;
+}
+
+.chat-input {
+  display: flex;
+  padding: 1rem;
+  gap: 0.5rem;
+  background: #333;
+}
+
+.chat-input input {
+  flex: 1;
+  background: #444;
+  border: 1px solid #555;
+  color: white;
+  padding: 0.75rem;
+  border-radius: 6px;
+}
+
+.chat-input input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.chat-input button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Poll */
+.poll-container {
+  padding: 1rem;
+}
+
+.poll-question {
+  margin-bottom: 1rem;
+  color: white;
+  font-weight: 500;
+}
+
+.poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.poll-option {
+  background: #444;
+  color: white;
+  border: 1px solid #555;
+  padding: 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.poll-option:hover {
+  background: #555;
+  border-color: var(--primary-color);
+}
+
+/* Bottom Controls */
+.bottom-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #2d2d2d;
+  border-top: 1px solid #444;
+}
+
+.media-controls,
+.interaction-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.bottom-controls .control-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .class-sidebar {
+    width: 300px;
+  }
+
+  .class-header {
+    padding: 1rem;
+  }
+
+  .class-controls {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .live-class-room {
+    height: 100vh;
+  }
+
+  .class-main {
+    flex-direction: column;
+  }
+
+  .class-sidebar {
+    width: 100%;
+    height: 300px;
+    order: -1;
+  }
+
+  .main-content {
+    flex: 1;
+  }
+
+  .remote-videos {
+    height: 100px;
+  }
+
+  .remote-video-container {
+    min-width: 150px;
+  }
+
+  .bottom-controls {
+    padding: 0.75rem 1rem;
+  }
+
+  .bottom-controls .control-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 1rem;
+  }
+
+  .class-header {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    text-align: center;
+  }
+
+  .class-header .back-btn {
+    justify-self: start;
+    grid-row: 1;
+  }
+
+  .class-info {
+    justify-self: center;
+    grid-row: 2;
+  }
+
+  .class-controls {
+    justify-self: center;
+    grid-row: 3;
+  }
+
+  .leave-btn {
+    justify-self: center;
+    grid-row: 3;
+    margin-left: 1rem;
+  }
+
+  .lobby-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .lobby-header .back-btn {
+    position: static;
+  }
+}
+
+/* Loading States */
+.loading-video {
+  background: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+
+.connection-status {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.connection-status.connected {
+  color: #4caf50;
+}
+
+.connection-status.connecting {
+  color: #ffd700;
+}
+
+.connection-status.disconnected {
+  color: #f44336;
+}

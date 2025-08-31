@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import CreateCourse from "./Course/CreateCourse";
 import CourseMaterials from "./Course/CourseMaterials";
+import LiveClassManagement from "./onlineClass/LiveClassManagement";
 import "./CSS/Dashboard.css";
 import "./CSS/Table.css";
 import "./CSS/Button.css";
@@ -246,6 +247,15 @@ const InstructorDashboard = ({ user }) => {
                             <button
                               onClick={() => {
                                 setSelectedCourse(course);
+                                setActiveTab("live-class");
+                              }}
+                              className="btn-sm btn-live-class"
+                            >
+                              Live Class
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedCourse(course);
                                 setActiveTab("quizzes"); // Add this
                               }}
                               className="btn-sm btn-quiz"
@@ -446,6 +456,39 @@ const InstructorDashboard = ({ user }) => {
           </div>
         );
 
+      case "live-class":
+        return (
+          <div className="course-live-class-management">
+            {selectedCourse ? (
+              <>
+                <div className="live-class-header">
+                  <h3>Live Classes for: {selectedCourse.title}</h3>
+                  <button
+                    onClick={() => setActiveTab("courses")}
+                    className="btn-secondary"
+                  >
+                    Back to Courses
+                  </button>
+                </div>
+                <LiveClassManagement
+                  courseId={selectedCourse._id}
+                  user={user}
+                />
+              </>
+            ) : (
+              <div className="no-course-selected">
+                <p>Please select a course to manage live classes.</p>
+                <button
+                  onClick={() => setActiveTab("courses")}
+                  className="btn-primary"
+                >
+                  Go to Courses
+                </button>
+              </div>
+            )}
+          </div>
+        );
+
       default:
         return null;
     }
@@ -487,6 +530,12 @@ const InstructorDashboard = ({ user }) => {
               onClick={() => setActiveTab("materials")}
             >
               Materials: {selectedCourse.title}
+            </button>
+            <button
+              className={`tab-btn ${activeTab === "live-class" ? "active" : ""}`}
+              onClick={() => setActiveTab("live-class")}
+            >
+              Live Class: {selectedCourse.title}
             </button>
             <button
               className={`tab-btn ${activeTab === "quizzes" ? "active" : ""}`}

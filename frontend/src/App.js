@@ -15,6 +15,8 @@ import Certificate from "./components/Quiz/Certificate";
 import LandingPage from "./components/Landing";
 import CourseList from "./components/Course/CourseList";
 import CourseDetails from "./components/Course/CourseDetails";
+import LiveClassManagement from "./components/onlineClass/LiveClassManagement";
+import LiveClass from "./components/onlineClass/LiveClass";
 import axios from "axios";
 
 export default function App() {
@@ -110,7 +112,11 @@ export default function App() {
             <Route
               path="/register"
               element={
-                user ? <Navigate to={`/${user.role}-dashboard`} /> : <Register />
+                user ? (
+                  <Navigate to={`/${user.role}-dashboard`} />
+                ) : (
+                  <Register />
+                )
               }
             />
             <Route path="/courses" element={<CourseList user={user} />} />
@@ -135,6 +141,17 @@ export default function App() {
                   <Navigate to="/" />
                 )
               }
+            />
+            <Route
+              path="/course/:courseId/live-classes"
+              element={
+                user ? <LiveClassManagement user={user} /> : <Navigate to="/" />
+              }
+            />
+
+            <Route
+              path="/live-class/:classId"
+              element={user ? <LiveClass user={user} /> : <Navigate to="/" />}
             />
             <Route
               path="/quiz/:quizId/take"

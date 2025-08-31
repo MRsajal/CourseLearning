@@ -114,6 +114,24 @@
   background-color: var(--secondary-color);
 }
 
+.btn-live-class {
+  background-color: #e91e63;
+  color: white;
+}
+
+.btn-live-class:hover {
+  background-color: #c2185b;
+}
+
+.btn-quiz {
+  background-color: #9c27b0;
+  color: white;
+}
+
+.btn-quiz:hover {
+  background-color: #7b1fa2;
+}
+
 .btn-sm:hover {
   opacity: 0.8;
 }
