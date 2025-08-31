@@ -3,10 +3,11 @@ const Course = require("../models/Course");
 const User = require("../models/User");
 const { authenticateToken, requireRole } = require("../middleware/auth");
 const { thumbnailUpload } = require("../middleware/upload");
+const { staticCourses } = require("../data/staticCourses");
 
 const router = express.Router();
 
-// Get all published courses (public)
+// Get all published courses (public) - combines database + static courses
 router.get("/courses", async (req, res) => {
   try {
     const { category, level, search } = req.query;
@@ -27,22 +28,52 @@ router.get("/courses", async (req, res) => {
       ];
     }
 
-    const courses = await Course.find(filter)
+    // Get database courses
+    const dbCourses = await Course.find(filter)
       .populate("instructor", "name email")
       .sort({ createdAt: -1 });
 
-    // Ensure instructorName is available for all courses
-    const coursesWithInstructorName = courses.map(course => {
+    // Format database courses
+    const formattedDbCourses = dbCourses.map(course => {
       const courseObj = course.toObject();
       if (!courseObj.instructorName && courseObj.instructor) {
         courseObj.instructorName = courseObj.instructor.name;
       }
+      // Convert enrolledStudents array to count for frontend consistency
+      if (Array.isArray(courseObj.enrolledStudents)) {
+        courseObj.enrolledStudents = courseObj.enrolledStudents.length;
+      }
       return courseObj;
     });
 
+    // Filter static courses based on query parameters
+    let filteredStaticCourses = [...staticCourses];
+    
+    if (category && category !== "all") {
+      filteredStaticCourses = filteredStaticCourses.filter(course => course.category === category);
+    }
+    
+    if (level && level !== "all") {
+      filteredStaticCourses = filteredStaticCourses.filter(course => course.level === level);
+    }
+    
+    if (search) {
+      const searchTerm = search.toLowerCase();
+      filteredStaticCourses = filteredStaticCourses.filter(course => 
+        course.title.toLowerCase().includes(searchTerm) ||
+        course.description.toLowerCase().includes(searchTerm) ||
+        course.instructorName.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Combine both sources - database courses first, then static courses
+    const allCourses = [...formattedDbCourses, ...filteredStaticCourses];
+
     res.json({
-      courses: coursesWithInstructorName,
-      count: coursesWithInstructorName.length,
+      courses: allCourses,
+      count: allCourses.length,
+      dbCount: formattedDbCourses.length,
+      staticCount: filteredStaticCourses.length,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

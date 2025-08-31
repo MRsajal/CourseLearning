@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import axios from "axios";
 import "../CSS/Courses.css";
 import "../CSS/Button.css";
 
@@ -9,7 +8,7 @@ const CourseCard = ({ course, user, onEnroll }) => {
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);
   const [paymentData, setPaymentData] = useState({
     method: "Bkash",
-    transactionId: ""
+    transactionId: "",
   });
 
   const handleEnrollClick = () => {
@@ -17,7 +16,7 @@ const CourseCard = ({ course, user, onEnroll }) => {
       alert("Only students can enroll in courses.");
       return;
     }
-    
+
     // If course is free, enroll directly
     if (course.price === 0) {
       handleEnroll();
@@ -29,39 +28,30 @@ const CourseCard = ({ course, user, onEnroll }) => {
 
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!paymentData.transactionId.trim()) {
       setMessage("Please enter a valid transaction ID");
       return;
     }
-    
+
     await handleEnroll();
   };
 
   const handleEnroll = async () => {
     setEnrolling(true);
     try {
-      const token = localStorage.getItem("token");
-      const enrollmentData = course.price > 0 ? {
-        paymentMethod: paymentData.method,
-        transactionId: paymentData.transactionId
-      } : {};
-
-      await axios.post(
-        `/api/courses/${course._id}/enroll`,
-        enrollmentData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      // Since we're using static data, simulate enrollment
       setMessage("Successfully enrolled!");
       setShowPaymentPopup(false);
       setPaymentData({ method: "Bkash", transactionId: "" });
-      onEnroll(); // Refresh the course list
+
+      // For static data, we can update the course locally
+      // In a real app, this would be an API call
+      if (onEnroll) {
+        onEnroll(); // Refresh the course list
+      }
     } catch (error) {
-      setMessage(error.response?.data?.message || "Enrollment failed");
+      setMessage("Enrollment failed");
     } finally {
       setEnrolling(false);
     }
@@ -72,11 +62,9 @@ const CourseCard = ({ course, user, onEnroll }) => {
     setPaymentData({ method: "Bkash", transactionId: "" });
     setMessage("");
   };
-  const isEnrolled =
-    user &&
-    course.enrolledStudents?.some(
-      (enrollment) => enrollment.student.toString() === user.id.toString()
-    );
+  // For static data, we'll check enrollment status differently
+  // In a real app, this would check against the backend
+  const isEnrolled = false; // For now, assume no enrollment for static demo
 
   return (
     <div className="course-card">
@@ -105,8 +93,11 @@ const CourseCard = ({ course, user, onEnroll }) => {
             <strong>Duration:</strong> {course.duration}
           </div>
           <div className="course-enrollment">
-            <strong>Enrolled:</strong> {course.enrolledStudents?.length || 0}/
-            {course.maxStudents}
+            <strong>Enrolled:</strong>{" "}
+            {Array.isArray(course.enrolledStudents)
+              ? course.enrolledStudents.length
+              : 0}{" "}
+            students
           </div>
         </div>
 
@@ -124,10 +115,7 @@ const CourseCard = ({ course, user, onEnroll }) => {
               ) : (
                 <button
                   onClick={handleEnrollClick}
-                  disabled={
-                    enrolling ||
-                    course.enrolledStudents?.length >= course.maxStudents
-                  }
+                  disabled={enrolling}
                   className="btn-enroll"
                 >
                   {enrolling ? "Enrolling..." : "Enroll Now"}
@@ -158,23 +146,25 @@ const CourseCard = ({ course, user, onEnroll }) => {
                 ×
               </button>
             </div>
-            
+
             <div className="popup-content">
               <div className="course-info">
                 <h4>{course.title}</h4>
                 <p className="price">Total: ${course.price}</p>
               </div>
-              
+
               <form onSubmit={handlePaymentSubmit}>
                 <div className="form-group">
                   <label htmlFor="paymentMethod">Payment Method:</label>
                   <select
                     id="paymentMethod"
                     value={paymentData.method}
-                    onChange={(e) => setPaymentData(prev => ({
-                      ...prev,
-                      method: e.target.value
-                    }))}
+                    onChange={(e) =>
+                      setPaymentData((prev) => ({
+                        ...prev,
+                        method: e.target.value,
+                      }))
+                    }
                     className="payment-select"
                   >
                     <option value="Bkash">Bkash</option>
@@ -182,32 +172,43 @@ const CourseCard = ({ course, user, onEnroll }) => {
                     <option value="Upay">Upay</option>
                   </select>
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="transactionId">Transaction ID:</label>
                   <input
                     type="text"
                     id="transactionId"
                     value={paymentData.transactionId}
-                    onChange={(e) => setPaymentData(prev => ({
-                      ...prev,
-                      transactionId: e.target.value
-                    }))}
+                    onChange={(e) =>
+                      setPaymentData((prev) => ({
+                        ...prev,
+                        transactionId: e.target.value,
+                      }))
+                    }
                     placeholder="Enter your transaction ID"
                     className="payment-input"
                     required
                   />
                 </div>
-                
+
                 <div className="payment-instructions">
-                  <p><strong>Payment Instructions:</strong></p>
+                  <p>
+                    <strong>Payment Instructions:</strong>
+                  </p>
                   <ul>
-                    <li>Send ${course.price} to our {paymentData.method} number</li>
-                    <li>Copy the transaction ID from your payment confirmation</li>
-                    <li>Enter the transaction ID above and click "Confirm Enrollment"</li>
+                    <li>
+                      Send ${course.price} to our {paymentData.method} number
+                    </li>
+                    <li>
+                      Copy the transaction ID from your payment confirmation
+                    </li>
+                    <li>
+                      Enter the transaction ID above and click "Confirm
+                      Enrollment"
+                    </li>
                   </ul>
                 </div>
-                
+
                 <div className="popup-actions">
                   <button
                     type="button"
@@ -226,7 +227,7 @@ const CourseCard = ({ course, user, onEnroll }) => {
                   </button>
                 </div>
               </form>
-              
+
               {message && (
                 <div
                   className={`popup-message ${

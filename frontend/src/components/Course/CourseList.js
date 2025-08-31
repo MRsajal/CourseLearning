@@ -1,43 +1,65 @@
-import React, { useEffect, useState, useCallback } from "react";
-import axios from "axios";
-import CourseCard from "./CourseCard";
-import "../CSS/Courses.css";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router";
+import courseService from "../../services/courseService";
 import "../CSS/Button.css";
+import "../CSS/Landing.css";
+import "../CSS/Dashboard.css";
+import "../CSS/Courses.css";
 
 const CourseList = ({ user }) => {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    category: "all",
-    level: "all",
-    search: "",
-  });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+
+  const categoryList = [
+    "Technology",
+    "Business", 
+    "Design",
+    "Marketing",
+    "Health",
+    "Music",
+    "Language",
+    "Other",
+  ];
 
   const fetchCourses = useCallback(async () => {
     try {
-      const params = new URLSearchParams();
-      if (filters.category !== "all")
-        params.append("category", filters.category);
-      if (filters.level !== "all") params.append("level", filters.level);
-      if (filters.search) params.append("search", filters.search);
-      const response = await axios.get(`/api/courses?${params.toString()}`);
-      setCourses(response.data.courses || response.data || []);
+      setLoading(true);
+      const result = await courseService.getAllCourses();
+      setCourses(result.courses);
     } catch (error) {
       console.error("Error fetching courses:", error);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, []);
+
+  const filteredCourses = useMemo(() => {
+    return courses.filter((course) => {
+      const matchesSearch =
+        course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.instructorName.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesCategory =
+        selectedCategory === "" || course.category === selectedCategory;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [courses, searchTerm, selectedCategory]);
 
   useEffect(() => {
     fetchCourses();
   }, [fetchCourses]);
 
-  const handleFilterChange = (filterType, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [filterType]: value,
-    }));
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleCategoryClick = (category) => {
+    setSelectedCategory(selectedCategory === category ? "" : category);
   };
 
   if (loading) {
@@ -77,63 +99,125 @@ const CourseList = ({ user }) => {
 
   return (
     <div className="course-list">
-      <div className="course-filters">
-        <div className="filter-group">
-          <input
-            type="text"
-            placeholder="Search courses..."
-            value={filters.search}
-            onChange={(e) => handleFilterChange("search", e.target.value)}
-            className="search-input"
-          />
-        </div>
+      {/* Back Button */}
+      <div className="back-button-section">
+        <button 
+          className="btn-back" 
+          onClick={() => navigate(-1)}
+        >
+          ← Back
+        </button>
+        <h2>All Courses</h2>
+      </div>
 
-        <div className="filter-group">
-          <select
-            value={filters.category}
-            onChange={(e) => handleFilterChange("category", e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">All Categories</option>
-            <option value="Technology">Technology</option>
-            <option value="Business">Business</option>
-            <option value="Design">Design</option>
-            <option value="Marketing">Marketing</option>
-            <option value="Health">Health</option>
-            <option value="Music">Music</option>
-            <option value="Language">Language</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <select
-            value={filters.level}
-            onChange={(e) => handleFilterChange("level", e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">All Levels</option>
-            <option value="Beginner">Beginner</option>
-            <option value="Intermediate">Intermediate</option>
-            <option value="Advanced">Advanced</option>
-          </select>
+      {/* Search Section */}
+      <div className="search-section">
+        <div className="search-container">
+          <div className="search-input-wrapper">
+            <input
+              type="text"
+              placeholder="Search for courses"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="search-input"
+            />
+            <button className="search-button">Search</button>
+          </div>
         </div>
       </div>
 
+      {/* Categories Section */}
+      <div className="categories-section">
+        <h3 className="categories-title">Browse by Category</h3>
+        <div className="categories-grid">
+          {categoryList.map((category) => (
+            <button
+              key={category}
+              onClick={() => handleCategoryClick(category)}
+              className={`category-button ${
+                selectedCategory === category ? "active" : ""
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Results Info */}
+      <div className="results-info">
+        <p>
+          Showing {filteredCourses.length} course
+          {filteredCourses.length !== 1 ? "s" : ""}
+          {selectedCategory && ` in ${selectedCategory}`}
+          {searchTerm && ` for "${searchTerm}"`}
+        </p>
+        {(searchTerm || selectedCategory) && (
+          <button
+            className="clear-filters"
+            onClick={() => {
+              setSearchTerm("");
+              setSelectedCategory("");
+            }}
+          >
+            Clear Filters
+          </button>
+        )}
+      </div>
+
+      {/* Courses Grid */}
       <div className="courses-grid">
-        {courses.length === 0 ? (
-          <div className="no-courses">
-            <p>No courses found matching your criteria.</p>
-          </div>
-        ) : (
-          courses.map((course) => (
-            <CourseCard
-              key={course._id}
-              course={course}
-              user={user}
-              onEnroll={fetchCourses}
-            />
+        {loading ? (
+          <div className="loading">Loading courses...</div>
+        ) : filteredCourses.length > 0 ? (
+          filteredCourses.map((course) => (
+            <div key={course.id} className="course-card-landing-compact">
+              {course.thumbnail && (
+                <div className="course-image">
+                  <img src={course.thumbnail} alt={course.title} />
+                  <div className="course-overlay">
+                    <button className="btn-preview">
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div className="course-content">
+                <div className="course-meta">
+                  <span className="course-category">{course.category}</span>
+                  <span className="course-level">{course.level}</span>
+                </div>
+                <h3 className="course-title">{course.title}</h3>
+                <p className="course-description">{course.description}</p>
+                <div className="course-instructor">
+                  <span className="instructor-name">
+                    By {course.instructorName}
+                  </span>
+                </div>
+                <div className="course-footer">
+                  <div className="course-students">
+                    <span>
+                      👥{" "}
+                      {Array.isArray(course.enrolledStudents)
+                        ? course.enrolledStudents.length
+                        : course.enrolledStudents || 0}{" "}
+                      students
+                    </span>
+                  </div>
+                  <div className="course-price">
+                    <span className="price">
+                      {course.price === 0 ? "Free" : `$${course.price}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           ))
+        ) : (
+          <div className="no-results">
+            <h3>No courses found</h3>
+            <p>Try adjusting your search or filter criteria.</p>
+          </div>
         )}
       </div>
     </div>
