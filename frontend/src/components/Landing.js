@@ -43,6 +43,21 @@ const LandingPage = () => {
     }
   };
 
+  const renderStars = (rating) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <span
+          key={i}
+          className={`star ${i <= rating ? 'filled' : 'empty'}`}
+        >
+          ★
+        </span>
+      );
+    }
+    return stars;
+  };
+
   const features = [
     {
       icon: "🎓",
@@ -239,6 +254,15 @@ const LandingPage = () => {
                     <div className="course-image">
                       <img src={course.thumbnail} alt={course.title} />
                       <div className="course-overlay">
+                        {/* Rating Display on Hover */}
+                        <div className="course-rating-hover">
+                          <div className="rating-stars-hover">
+                            {renderStars(course.rating || 0)}
+                          </div>
+                          <span className="rating-text-hover">
+                            {course.rating ? `${course.rating} (${course.totalRatings || 0})` : 'No ratings'}
+                          </span>
+                        </div>
                         <Link to="/register" className="btn-preview">
                           Preview Course
                         </Link>

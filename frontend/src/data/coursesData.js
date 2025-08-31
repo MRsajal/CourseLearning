@@ -13,6 +13,8 @@ export const preBuiltCourses = [
     isPublished: true,
     enrolledStudents: 1250,
     rating: 4.8,
+    totalRatings: 342,
+    ratings: [],
     totalMaterials: 45,
     completedMaterials: 0,
     progressPercentage: 0
@@ -30,6 +32,8 @@ export const preBuiltCourses = [
     isPublished: true,
     enrolledStudents: 892,
     rating: 4.9,
+    totalRatings: 156,
+    ratings: [],
     totalMaterials: 32,
     completedMaterials: 0,
     progressPercentage: 0
@@ -47,6 +51,8 @@ export const preBuiltCourses = [
     isPublished: true,
     enrolledStudents: 1150,
     rating: 4.7,
+    totalRatings: 289,
+    ratings: [],
     totalMaterials: 38,
     completedMaterials: 0,
     progressPercentage: 0

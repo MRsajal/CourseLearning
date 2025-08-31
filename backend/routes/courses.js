@@ -444,4 +444,114 @@ router.delete(
   }
 );
 
+// Rate a course (students only)
+router.post(
+  "/courses/:id/rate",
+  authenticateToken,
+  requireRole(["student"]),
+  async (req, res) => {
+    try {
+      const { rating } = req.body;
+      const courseId = req.params.id;
+      const userId = req.user.userId;
+
+      // Validate rating
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ 
+          message: "Rating must be between 1 and 5" 
+        });
+      }
+
+      const course = await Course.findById(courseId);
+
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      // Check if student is enrolled in the course
+      const isEnrolled = course.enrolledStudents.some(
+        (enrollment) => enrollment.student.toString() === userId
+      );
+
+      if (!isEnrolled) {
+        return res.status(403).json({ 
+          message: "You must be enrolled in this course to rate it" 
+        });
+      }
+
+      // Check if user already rated this course
+      const existingRatingIndex = course.ratings.findIndex(
+        (r) => r.user.toString() === userId
+      );
+
+      if (existingRatingIndex !== -1) {
+        // Update existing rating
+        course.ratings[existingRatingIndex].rating = rating;
+        course.ratings[existingRatingIndex].ratedAt = new Date();
+      } else {
+        // Add new rating
+        course.ratings.push({
+          user: userId,
+          rating: rating,
+          ratedAt: new Date(),
+        });
+      }
+
+      // Calculate and update average rating
+      course.calculateAverageRating();
+      await course.save();
+
+      res.json({
+        message: "Course rated successfully",
+        averageRating: course.averageRating,
+        totalRatings: course.totalRatings,
+        userRating: rating,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Server error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+);
+
+// Get user's rating for a course
+router.get(
+  "/courses/:id/rating",
+  authenticateToken,
+  requireRole(["student"]),
+  async (req, res) => {
+    try {
+      const courseId = req.params.id;
+      const userId = req.user.userId;
+
+      const course = await Course.findById(courseId);
+
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      const userRating = course.ratings.find(
+        (r) => r.user.toString() === userId
+      );
+
+      res.json({
+        userRating: userRating ? userRating.rating : null,
+        averageRating: course.averageRating,
+        totalRatings: course.totalRatings,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Server error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+);
+
 module.exports = router;

@@ -64,6 +64,36 @@ const courseSchema = new mongoose.Schema({
     type: Number,
     default: 100,
   },
+  ratings: [
+    {
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
+      rating: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 5,
+      },
+      ratedAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  ],
+  averageRating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5,
+  },
+  totalRatings: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -73,6 +103,19 @@ const courseSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+// Method to calculate and update average rating
+courseSchema.methods.calculateAverageRating = function() {
+  if (this.ratings.length === 0) {
+    this.averageRating = 0;
+    this.totalRatings = 0;
+  } else {
+    const sum = this.ratings.reduce((acc, rating) => acc + rating.rating, 0);
+    this.averageRating = Math.round((sum / this.ratings.length) * 10) / 10; // Round to 1 decimal
+    this.totalRatings = this.ratings.length;
+  }
+};
+
 courseSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();

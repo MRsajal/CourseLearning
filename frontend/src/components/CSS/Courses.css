@@ -76,18 +76,18 @@
 }
 
 .course-content {
-  padding: 0.75rem; /* Further reduced from 1rem */
+  padding: 1rem;
   flex: 1; /* Take remaining space (300px) */
   display: flex;
   flex-direction: column;
 }
 
 .course-title {
-  font-size: 1.1rem; /* Reduced from 1.25rem */
+  font-size: 1.25rem;
   font-weight: 600;
   color: #2d3748;
-  margin: 0 0 0.5rem 0; /* Reduced from 0.75rem */
-  line-height: 1.3; /* Reduced from 1.4 */
+  margin: 0 0 0.75rem 0;
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -96,34 +96,34 @@
 }
 
 .course-description {
-  font-size: 0.8rem; /* Reduced from 0.875rem */
+  font-size: 0.875rem;
   color: #718096;
-  line-height: 1.4; /* Reduced from 1.5 */
-  margin-bottom: 0.75rem; /* Reduced from 1rem */
+  line-height: 1.5;
+  margin-bottom: 1rem;
   display: -webkit-box;
-  -webkit-line-clamp: 2; /* Reduced from 3 */
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
-  line-clamp: 2;
+  line-clamp: 3;
   overflow: hidden;
 }
 
 .course-info {
-  margin-bottom: 0.75rem; /* Reduced from 1rem */
+  margin-bottom: 1rem;
 }
 
 .course-meta {
   display: flex;
-  gap: 0.4rem; /* Reduced from 0.5rem */
-  margin-bottom: 0.5rem; /* Reduced from 0.75rem */
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .course-category,
 .course-level {
   background: #e2e8f0;
   color: #4a5568;
-  padding: 0.2rem 0.6rem; /* Reduced padding */
-  border-radius: 15px; /* Reduced from 20px */
-  font-size: 0.7rem; /* Reduced from 0.75rem */
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
   font-weight: 500;
   text-transform: uppercase;
 }
@@ -139,46 +139,46 @@
 }
 
 .course-instructor {
-  font-size: 0.8rem; /* Reduced from 0.875rem */
+  font-size: 0.875rem;
   color: #4a5568;
-  margin: 0.3rem 0; /* Reduced from 0.5rem */
+  margin: 0.5rem 0;
   font-weight: 500;
 }
 
 .course-duration {
-  font-size: 0.8rem; /* Reduced from 0.875rem */
+  font-size: 0.875rem;
   color: #718096;
-  margin: 0.3rem 0; /* Reduced from 0.5rem */
+  margin: 0.5rem 0;
 }
 
 .course-stats {
-  font-size: 0.8rem; /* Reduced from 0.875rem */
+  font-size: 0.875rem;
   color: #718096;
-  margin: 0.5rem 0; /* Reduced from 0.75rem */
+  margin: 0.75rem 0;
 }
 
 .course-price {
-  font-size: 1.3rem; /* Reduced from 1.5rem */
+  font-size: 1.5rem;
   font-weight: 700;
   color: #2b6cb0;
-  margin: 0.75rem 0; /* Reduced from 1rem */
+  margin: 1rem 0;
 }
 
 /* Course Progress */
 .course-progress {
-  margin: 0.5rem 0; /* Reduced from 1rem */
+  margin: 1rem 0;
   position: relative;
   height: auto;
-  min-height: 30px; /* Reduced from 40px */
+  min-height: 40px;
 }
 
 .progress-bar {
   width: 100%;
-  height: 6px; /* Reduced from 8px */
+  height: 8px;
   background-color: var(--tertiary-color);
-  border-radius: 3px; /* Reduced from 4px */
+  border-radius: 4px;
   overflow: hidden;
-  margin-bottom: 0.3rem; /* Reduced from 0.5rem */
+  margin-bottom: 0.5rem;
   position: relative;
 }
 
@@ -189,15 +189,15 @@
   position: absolute;
   top: 0;
   left: 0;
-  border-radius: 3px; /* Reduced from 4px */
+  border-radius: 4px;
 }
 
 .progress-text {
-  font-size: 0.75rem; /* Reduced from 0.875rem */
+  font-size: 0.875rem;
   color: #666;
   display: block;
-  height: 1em; /* Reduced from 1.2em */
-  line-height: 1; /* Reduced from 1.2 */
+  height: 1.2em;
+  line-height: 1.2;
   margin: 0;
   padding: 0;
 }
@@ -206,11 +206,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.4rem; /* Reduced from 0.5rem */
+  gap: 0.5rem;
 }
 
 .progress-materials {
-  font-size: 0.7rem; /* Reduced from 0.8rem */
+  font-size: 0.8rem;
   color: #888;
   font-weight: 500;
 }
@@ -218,7 +218,7 @@
 /* Course Action Buttons */
 .course-actions {
   margin-top: auto; /* Push to bottom */
-  padding-top: 0.75rem; /* Reduced from 1rem */
+  padding-top: 1rem;
 }
 
 .btn-continue,
@@ -226,13 +226,13 @@
 .btn-view {
   display: block;
   width: 100%;
-  padding: 0.6rem 0.8rem; /* Reduced from 0.75rem 1rem */
+  padding: 0.75rem 1rem;
   text-align: center;
   text-decoration: none;
   border: none;
-  border-radius: 6px; /* Reduced from 8px */
+  border-radius: 8px;
   font-weight: 600;
-  font-size: 0.8rem; /* Reduced from 0.875rem */
+  font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -1027,4 +1027,195 @@
   .card-body {
     padding: 1rem;
   }
+}
+
+/* Rating System Styles */
+.course-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+}
+
+.star {
+  font-size: 1rem;
+  color: #ddd;
+  transition: color 0.2s ease;
+}
+
+.star.filled {
+  color: #ffc107;
+}
+
+.star.empty {
+  color: #ddd;
+}
+
+.rating-text {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.btn-rate {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-rate:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+/* Rating Modal */
+.rating-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.rating-modal {
+  background: white;
+  border-radius: 8px;
+  padding: 0;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 1.5rem 0;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 1rem;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.modal-content {
+  padding: 1.5rem;
+}
+
+.modal-content h4 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+
+.modal-content p {
+  margin: 0.5rem 0 1.5rem 0;
+  color: #666;
+}
+
+.rating-stars {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 1.5rem 0;
+}
+
+.rating-stars .star {
+  font-size: 2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rating-stars .star:hover {
+  transform: scale(1.1);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  background: white;
+  color: #666;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background: #f5f5f5;
+  border-color: #999;
+}
+
+.btn-submit {
+  flex: 1;
+  padding: 0.75rem;
+  border: none;
+  background: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.btn-submit:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Course overlay adjustments for rating button */
+.course-overlay {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.course-overlay .btn-preview,
+.course-overlay .btn-rate {
+  margin: 0;
 }

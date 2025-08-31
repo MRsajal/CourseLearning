@@ -3,7 +3,6 @@ import { useNavigate } from "react-router";
 import axios from "axios";
 import courseService from "../services/courseService";
 import CourseList from "./Course/CourseList";
-import CourseCard from "./Course/CourseCard";
 import "./CSS/Dashboard.css";
 import "./CSS/Table.css";
 import "./CSS/Button.css";
@@ -28,6 +27,12 @@ const StudentDashboard = ({ user }) => {
     method: "Bkash",
     transactionId: "",
   });
+
+  // Rating states
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [selectedRatingCourse, setSelectedRatingCourse] = useState(null);
+  const [userRating, setUserRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
 
   const categories = [
     "Technology",
@@ -62,7 +67,39 @@ const StudentDashboard = ({ user }) => {
   const fetchFeaturedCourses = async () => {
     try {
       const result = await courseService.getFeaturedCourses(6);
-      setFeaturedCourses(result.courses);
+      const coursesWithRatings = await Promise.all(
+        result.courses.map(async (course) => {
+          try {
+            const token = localStorage.getItem("token");
+            if (token) {
+              const ratingResponse = await fetch(
+                `http://localhost:5000/api/courses/${
+                  course._id || course.id
+                }/rating`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+              if (ratingResponse.ok) {
+                const ratingData = await ratingResponse.json();
+                return {
+                  ...course,
+                  userRating: ratingData.userRating,
+                  averageRating: ratingData.averageRating || course.rating,
+                  totalRatings: ratingData.totalRatings || 0,
+                };
+              }
+            }
+            return course;
+          } catch (error) {
+            console.log("Could not fetch rating for course:", course.title);
+            return course;
+          }
+        })
+      );
+      setFeaturedCourses(coursesWithRatings);
     } catch (error) {
       console.error("Error fetching courses:", error);
     } finally {
@@ -81,7 +118,35 @@ const StudentDashboard = ({ user }) => {
 
       const coursesData = response.data.courses || response.data;
       if (Array.isArray(coursesData)) {
-        setEnrolledCourses(coursesData);
+        // Fetch user ratings for enrolled courses
+        const coursesWithRatings = await Promise.all(
+          coursesData.map(async (course) => {
+            try {
+              const ratingResponse = await fetch(
+                `http://localhost:5000/api/courses/${course._id}/rating`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+              if (ratingResponse.ok) {
+                const ratingData = await ratingResponse.json();
+                return {
+                  ...course,
+                  userRating: ratingData.userRating,
+                  averageRating: ratingData.averageRating || course.rating,
+                  totalRatings: ratingData.totalRatings || 0,
+                };
+              }
+              return course;
+            } catch (error) {
+              console.log("Could not fetch rating for course:", course.title);
+              return course;
+            }
+          })
+        );
+        setEnrolledCourses(coursesWithRatings);
       } else {
         console.warn("API response is not an array:", response.data);
         setEnrolledCourses([]);
@@ -213,6 +278,112 @@ const StudentDashboard = ({ user }) => {
     navigate(`/course/${course._id || course.id}/learn`);
   };
 
+  const handleRateCourse = (course) => {
+    setSelectedRatingCourse(course);
+    setUserRating(course.userRating || 0); // Pre-fill with existing rating
+    setHoverRating(0);
+    setShowRatingModal(true);
+  };
+
+  const submitRating = async () => {
+    if (!user || userRating === 0) return;
+
+    try {
+      const courseId = selectedRatingCourse._id || selectedRatingCourse.id;
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setMessage("Please log in to rate courses");
+        setTimeout(() => setMessage(""), 3000);
+        return;
+      }
+
+      const response = await fetch(
+        `http://localhost:5000/api/courses/${courseId}/rate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ rating: userRating }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Update featured courses with backend response
+        const updatedFeaturedCourses = featuredCourses.map((course) => {
+          if ((course._id || course.id) === courseId) {
+            return {
+              ...course,
+              averageRating: data.averageRating,
+              totalRatings: data.totalRatings,
+              userRating: data.userRating,
+              rating: data.averageRating, // Keep backward compatibility
+            };
+          }
+          return course;
+        });
+
+        // Update enrolled courses with backend response
+        const updatedEnrolledCourses = enrolledCourses.map((course) => {
+          if ((course._id || course.id) === courseId) {
+            return {
+              ...course,
+              averageRating: data.averageRating,
+              totalRatings: data.totalRatings,
+              userRating: data.userRating,
+              rating: data.averageRating, // Keep backward compatibility
+            };
+          }
+          return course;
+        });
+
+        setFeaturedCourses(updatedFeaturedCourses);
+        setEnrolledCourses(updatedEnrolledCourses);
+        setShowRatingModal(false);
+        setSelectedRatingCourse(null);
+        setUserRating(0);
+        setMessage("Course rated successfully!");
+
+        // Clear message after 3 seconds
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        setMessage(data.message || "Failed to submit rating");
+        setTimeout(() => setMessage(""), 3000);
+      }
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      setMessage("Failed to submit rating. Please try again.");
+      setTimeout(() => setMessage(""), 3000);
+    }
+  };
+
+  const renderStars = (rating, isInteractive = false) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <span
+          key={i}
+          className={`star ${
+            i <= (isInteractive ? hoverRating || userRating : rating)
+              ? "filled"
+              : "empty"
+          }`}
+          onClick={isInteractive ? () => setUserRating(i) : undefined}
+          onMouseEnter={isInteractive ? () => setHoverRating(i) : undefined}
+          onMouseLeave={isInteractive ? () => setHoverRating(0) : undefined}
+          style={{ cursor: isInteractive ? "pointer" : "default" }}
+        >
+          ★
+        </span>
+      );
+    }
+    return stars;
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "browse":
@@ -282,21 +453,47 @@ const StudentDashboard = ({ user }) => {
                       <div className="course-image">
                         <img src={course.thumbnail} alt={course.title} />
                         <div className="course-overlay">
-                          {isEnrolled(course._id || course.id) ? (
-                            <button className="btn-enrolled" disabled>
-                              Enrolled
-                            </button>
-                          ) : (
-                            <button
-                              className="btn-preview"
-                              onClick={() => handleEnrollClick(course)}
-                              disabled={enrolling}
-                            >
-                              {enrolling && selectedCourse?.id === course.id
-                                ? "Enrolling..."
-                                : "Enroll Course"}
-                            </button>
-                          )}
+                          {/* Rating Display on Hover */}
+                          <div className="course-rating-hover">
+                            <div className="rating-stars-hover">
+                              {renderStars(
+                                course.averageRating || course.rating || 0
+                              )}
+                            </div>
+                            <span className="rating-text-hover">
+                              {course.averageRating || course.rating
+                                ? `${course.averageRating || course.rating} (${
+                                    course.totalRatings || 0
+                                  })`
+                                : "No ratings"}
+                            </span>
+                          </div>
+                          <div className="course-overlay-buttons">
+                            {isEnrolled(course._id || course.id) ? (
+                              <button className="btn-enrolled" disabled>
+                                Enrolled
+                              </button>
+                            ) : (
+                              <button
+                                className="btn-preview"
+                                onClick={() => handleEnrollClick(course)}
+                                disabled={enrolling}
+                              >
+                                {enrolling && selectedCourse?.id === course.id
+                                  ? "Enrolling..."
+                                  : "Enroll Course"}
+                              </button>
+                            )}
+                            {/* Rate Course Button in Overlay */}
+                            {!isEnrolled(course._id || course.id) && (
+                              <button
+                                className="btn-rate-overlay"
+                                onClick={() => handleRateCourse(course)}
+                              >
+                                Rate Course
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -345,7 +542,7 @@ const StudentDashboard = ({ user }) => {
             <div className="view-all-section">
               <button
                 className="btn-primary btn-view-all"
-                onClick={() => navigate('/courses')}
+                onClick={() => navigate("/courses")}
               >
                 View All Courses
               </button>
@@ -389,24 +586,48 @@ const StudentDashboard = ({ user }) => {
                         <div className="course-image">
                           <img src={course.thumbnail} alt={course.title} />
                           <div className="course-overlay">
-                            {isEnrolled(course._id || course.id) ? (
+                            {/* Rating Display on Hover */}
+                            <div className="course-rating-hover">
+                              <div className="rating-stars-hover">
+                                {renderStars(
+                                  course.averageRating || course.rating || 0
+                                )}
+                              </div>
+                              <span className="rating-text-hover">
+                                {course.averageRating || course.rating
+                                  ? `${
+                                      course.averageRating || course.rating
+                                    } (${course.totalRatings || 0})`
+                                  : "No ratings"}
+                              </span>
+                            </div>
+                            <div className="course-overlay-buttons">
+                              {isEnrolled(course._id || course.id) ? (
+                                <button
+                                  className="btn-enrolled"
+                                  onClick={() => handleViewMaterials(course)}
+                                >
+                                  Materials
+                                </button>
+                              ) : (
+                                <button
+                                  className="btn-preview"
+                                  onClick={() => handleEnrollClick(course)}
+                                  disabled={enrolling}
+                                >
+                                  {enrolling && selectedCourse?.id === course.id
+                                    ? "Enrolling..."
+                                    : "Enroll Course"}
+                                </button>
+                              )}
+                              {/* Rate Course Button in Overlay */}
                               <button
-                                className="btn-enrolled"
-                                onClick={() => handleViewMaterials(course)}
+                                className="btn-rate-overlay"
+                                onClick={() => handleRateCourse(course)}
                               >
-                                Materials
+                                Rate Course
                               </button>
-                            ) : (
-                              <button
-                                className="btn-preview"
-                                onClick={() => handleEnrollClick(course)}
-                                disabled={enrolling}
-                              >
-                                {enrolling && selectedCourse?.id === course.id
-                                  ? "Enrolling..."
-                                  : "Enroll Course"}
-                              </button>
-                            )}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -664,6 +885,43 @@ const StudentDashboard = ({ user }) => {
           }`}
         >
           {message}
+        </div>
+      )}
+
+      {/* Rating Modal */}
+      {showRatingModal && selectedRatingCourse && (
+        <div className="rating-modal-overlay">
+          <div className="rating-modal">
+            <div className="modal-header">
+              <h3>Rate Course</h3>
+              <button
+                className="close-btn"
+                onClick={() => setShowRatingModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-content">
+              <h4>{selectedRatingCourse.title}</h4>
+              <p>How would you rate this course?</p>
+              <div className="rating-stars">{renderStars(0, true)}</div>
+              <div className="modal-actions">
+                <button
+                  className="btn-cancel"
+                  onClick={() => setShowRatingModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn-submit"
+                  onClick={submitRating}
+                  disabled={userRating === 0}
+                >
+                  Submit Rating
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

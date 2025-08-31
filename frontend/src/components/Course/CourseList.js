@@ -12,6 +12,10 @@ const CourseList = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [userRating, setUserRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
 
   const categoryList = [
     "Technology",
@@ -60,6 +64,62 @@ const CourseList = ({ user }) => {
 
   const handleCategoryClick = (category) => {
     setSelectedCategory(selectedCategory === category ? "" : category);
+  };
+
+  const handleRateCourse = (course) => {
+    setSelectedCourse(course);
+    setUserRating(0);
+    setHoverRating(0);
+    setShowRatingModal(true);
+  };
+
+  const submitRating = async () => {
+    if (!user || userRating === 0) return;
+
+    try {
+      // Update course rating locally for demo
+      const updatedCourses = courses.map(course => {
+        if (course.id === selectedCourse.id) {
+          const currentRatings = course.ratings || [];
+          const newRatings = [...currentRatings, { userId: user.id, rating: userRating }];
+          const avgRating = newRatings.reduce((sum, r) => sum + r.rating, 0) / newRatings.length;
+          
+          return {
+            ...course,
+            ratings: newRatings,
+            rating: Math.round(avgRating * 10) / 10, // Round to 1 decimal
+            totalRatings: newRatings.length
+          };
+        }
+        return course;
+      });
+
+      setCourses(updatedCourses);
+      setShowRatingModal(false);
+      setSelectedCourse(null);
+      setUserRating(0);
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+    }
+  };
+
+  const renderStars = (rating, isInteractive = false) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <span
+          key={i}
+          className={`star ${i <= (isInteractive ? (hoverRating || userRating) : rating) ? 'filled' : 'empty'}`}
+          onClick={isInteractive ? () => setUserRating(i) : undefined}
+          onMouseEnter={isInteractive ? () => setHoverRating(i) : undefined}
+          onMouseLeave={isInteractive ? () => setHoverRating(0) : undefined}
+          style={{ cursor: isInteractive ? 'pointer' : 'default' }}
+        >
+          ★
+        </span>
+      );
+    }
+    return stars;
   };
 
   if (loading) {
@@ -179,6 +239,14 @@ const CourseList = ({ user }) => {
                     <button className="btn-preview">
                       View Details
                     </button>
+                    {user && user.role === "student" && (
+                      <button 
+                        className="btn-rate"
+                        onClick={() => handleRateCourse(course)}
+                      >
+                        Rate Course
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -188,6 +256,17 @@ const CourseList = ({ user }) => {
                   <span className="course-level">{course.level}</span>
                 </div>
                 <h3 className="course-title">{course.title}</h3>
+                
+                {/* Rating Display */}
+                <div className="course-rating">
+                  <div className="stars">
+                    {renderStars(course.rating || 0)}
+                  </div>
+                  <span className="rating-text">
+                    {course.rating ? `${course.rating} (${course.totalRatings || 0} reviews)` : 'No ratings yet'}
+                  </span>
+                </div>
+                
                 <p className="course-description">{course.description}</p>
                 <div className="course-instructor">
                   <span className="instructor-name">
@@ -220,6 +299,45 @@ const CourseList = ({ user }) => {
           </div>
         )}
       </div>
+
+      {/* Rating Modal */}
+      {showRatingModal && selectedCourse && (
+        <div className="rating-modal-overlay">
+          <div className="rating-modal">
+            <div className="modal-header">
+              <h3>Rate Course</h3>
+              <button 
+                className="close-btn" 
+                onClick={() => setShowRatingModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-content">
+              <h4>{selectedCourse.title}</h4>
+              <p>How would you rate this course?</p>
+              <div className="rating-stars">
+                {renderStars(0, true)}
+              </div>
+              <div className="modal-actions">
+                <button 
+                  className="btn-cancel"
+                  onClick={() => setShowRatingModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="btn-submit"
+                  onClick={submitRating}
+                  disabled={userRating === 0}
+                >
+                  Submit Rating
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
