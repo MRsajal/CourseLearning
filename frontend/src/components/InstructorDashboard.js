@@ -3,6 +3,7 @@ import axios from "axios";
 import CreateCourse from "./Course/CreateCourse";
 import CourseMaterials from "./Course/CourseMaterials";
 import LiveClassManagement from "./onlineClass/LiveClassManagement";
+import AssignmentManager from "./Assignment/AssignmentManager";
 import "./CSS/Dashboard.css";
 import "./CSS/Table.css";
 import "./CSS/Button.css";
@@ -263,6 +264,15 @@ const InstructorDashboard = ({ user }) => {
                               Quizzes
                             </button>
                             <button
+                              onClick={() => {
+                                setSelectedCourse(course);
+                                setActiveTab("assignments");
+                              }}
+                              className="btn-sm btn-assignments"
+                            >
+                              Assignments
+                            </button>
+                            <button
                               onClick={() =>
                                 toggleCoursePublish(
                                   course._id,
@@ -322,6 +332,35 @@ const InstructorDashboard = ({ user }) => {
             ) : (
               <div className="no-course-selected">
                 <p>Please select a course to manage quizzes.</p>
+                <button
+                  onClick={() => setActiveTab("courses")}
+                  className="btn-primary"
+                >
+                  Go to Courses
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      case "assignments":
+        return (
+          <div className="course-assignment-management">
+            {selectedCourse ? (
+              <>
+                <div className="assignment-management-header">
+                  <h3>Assignments for: {selectedCourse.title}</h3>
+                  <button
+                    onClick={() => setActiveTab("courses")}
+                    className="btn-secondary"
+                  >
+                    Back to Courses
+                  </button>
+                </div>
+                <AssignmentManager courseId={selectedCourse._id} user={user} />
+              </>
+            ) : (
+              <div className="no-course-selected">
+                <p>Please select a course to manage assignments.</p>
                 <button
                   onClick={() => setActiveTab("courses")}
                   className="btn-primary"
@@ -542,6 +581,12 @@ const InstructorDashboard = ({ user }) => {
               onClick={() => setActiveTab("quizzes")}
             >
               Quizzes: {selectedCourse.title}
+            </button>
+            <button
+              className={`tab-btn ${activeTab === "assignments" ? "active" : ""}`}
+              onClick={() => setActiveTab("assignments")}
+            >
+              Assignments: {selectedCourse.title}
             </button>
           </>
         )}

@@ -28,6 +28,9 @@ const materialRoutes = require("./routes/materials");
 const progressRoutes = require("./routes/progress");
 const quizRoutes = require("./routes/quiz");
 const certificateRoutes = require("./routes/certificate");
+const statsRoutes = require("./routes/stats");
+const assignmentRoutes = require("./routes/assignments");
+const reviewRoutes = require("./routes/reviews");
 const setupLiveClassSocket = require("./liveClassSocket");
 
 // Use routes
@@ -36,7 +39,10 @@ app.use("/api", courseRoutes);
 app.use("/api", materialRoutes);
 app.use("/api", progressRoutes);
 app.use("/api", quizRoutes);
+app.use("/api", statsRoutes);
 app.use("/api/certificate", certificateRoutes);
+app.use("/api/assignments", assignmentRoutes);
+app.use("/api", reviewRoutes);
 app.use("/api/live-class", require("./routes/liveClass"));
 app.use("/api/whiteboard", require("./routes/whiteboard"));
 

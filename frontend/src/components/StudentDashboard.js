@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import axios from "axios";
 import courseService from "../services/courseService";
 import CourseList from "./Course/CourseList";
+import StudentAssignments from "./Assignment/StudentAssignments";
 import "./CSS/Dashboard.css";
 import "./CSS/Table.css";
 import "./CSS/Button.css";
@@ -710,23 +711,7 @@ const StudentDashboard = ({ user }) => {
           </div>
         );
       case "assignments":
-        return (
-          <div className="student-assignments">
-            <h3>Assignments & Assessments</h3>
-            <div className="assignments-filter">
-              <button className="filter-btn active">All</button>
-              <button className="filter-btn">Pending</button>
-              <button className="filter-btn">Submitted</button>
-              <button className="filter-btn">Graded</button>
-            </div>
-            <div className="assignments-list">
-              <div className="no-assignments">
-                <p>No assignments available yet.</p>
-                <p>Assignments will appear here once you enroll in courses.</p>
-              </div>
-            </div>
-          </div>
-        );
+        return <StudentAssignments user={user} />;
       default:
         return <CourseList user={user} />;
     }

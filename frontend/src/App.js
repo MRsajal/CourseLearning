@@ -8,7 +8,6 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import StudentDashboard from "./components/StudentDashboard";
 import InstructorDashboard from "./components/InstructorDashboard";
-import AdminDashboard from "./components/AdminDashboard";
 import CourseLearning from "./components/Course/CourseLearning";
 import QuizTaking from "./components/Quiz/QuizTaking";
 import Certificate from "./components/Quiz/Certificate";
@@ -167,16 +166,6 @@ export default function App() {
               path="/certificate/:certificateId"
               element={
                 user ? <Certificate user={user} /> : <Navigate to="/login" />
-              }
-            />
-            <Route
-              path="/admin-dashboard"
-              element={
-                user && user.role === "admin" ? (
-                  <AdminDashboard user={user} />
-                ) : (
-                  <Navigate to="/" />
-                )
               }
             />
             <Route

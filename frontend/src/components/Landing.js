@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import courseService from "../services/courseService";
+import axios from "axios";
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -20,10 +21,120 @@ const LandingPage = () => {
 
   const fetchFeaturedCourses = async () => {
     try {
-      const result = await courseService.getFeaturedCourses(6);
-      setFeaturedCourses(result.courses);
+      // Fetch database courses
+      const dbCoursesResult = await courseService.getFeaturedCourses(10);
+      let allCourses = dbCoursesResult.courses || [];
+
+      // Add predefined courses if we need more to reach a good number for display
+      const predefinedCourses = [
+        {
+          id: 'pred-1',
+          title: 'Complete Web Development Bootcamp',
+          description: 'Learn HTML, CSS, JavaScript, React, Node.js and more in this comprehensive course.',
+          category: 'Web Development',
+          level: 'Beginner',
+          price: 89.99,
+          instructorName: 'John Smith',
+          thumbnail: 'https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=400&h=250&fit=crop',
+          rating: 4.8,
+          totalRatings: 1250,
+          enrolledStudents: 3420
+        },
+        {
+          id: 'pred-2',
+          title: 'Data Science with Python',
+          description: 'Master data analysis, visualization, and machine learning with Python.',
+          category: 'Data Science',
+          level: 'Intermediate',
+          price: 129.99,
+          instructorName: 'Sarah Johnson',
+          thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
+          rating: 4.9,
+          totalRatings: 890,
+          enrolledStudents: 2150
+        },
+        {
+          id: 'pred-3',
+          title: 'Digital Marketing Masterclass',
+          description: 'Learn SEO, social media marketing, content marketing, and paid advertising.',
+          category: 'Marketing',
+          level: 'Beginner',
+          price: 79.99,
+          instructorName: 'Mike Chen',
+          thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=250&fit=crop',
+          rating: 4.7,
+          totalRatings: 675,
+          enrolledStudents: 1890
+        },
+        {
+          id: 'pred-4',
+          title: 'Mobile App Development with React Native',
+          description: 'Build iOS and Android apps using React Native and JavaScript.',
+          category: 'Mobile Development',
+          level: 'Intermediate',
+          price: 99.99,
+          instructorName: 'Emily Davis',
+          thumbnail: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=250&fit=crop',
+          rating: 4.6,
+          totalRatings: 420,
+          enrolledStudents: 1240
+        },
+        {
+          id: 'pred-5',
+          title: 'Graphic Design Fundamentals',
+          description: 'Learn design principles, typography, color theory, and Adobe Creative Suite.',
+          category: 'Design',
+          level: 'Beginner',
+          price: 69.99,
+          instructorName: 'Alex Rodriguez',
+          thumbnail: 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=250&fit=crop',
+          rating: 4.5,
+          totalRatings: 320,
+          enrolledStudents: 980
+        },
+        {
+          id: 'pred-6',
+          title: 'Cybersecurity Essentials',
+          description: 'Learn network security, ethical hacking, and cybersecurity best practices.',
+          category: 'Cybersecurity',
+          level: 'Intermediate',
+          price: 149.99,
+          instructorName: 'David Wilson',
+          thumbnail: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&h=250&fit=crop',
+          rating: 4.8,
+          totalRatings: 560,
+          enrolledStudents: 1650
+        }
+      ];
+
+      // Combine database courses with predefined courses
+      // If we have fewer than 6 database courses, add predefined ones
+      if (allCourses.length < 6) {
+        const neededCourses = 6 - allCourses.length;
+        allCourses = [...allCourses, ...predefinedCourses.slice(0, neededCourses)];
+      }
+
+      // Limit to 6 courses for display
+      setFeaturedCourses(allCourses.slice(0, 6));
     } catch (error) {
       console.error("Error fetching courses:", error);
+      // Fallback to predefined courses only if API fails
+      const fallbackCourses = [
+        {
+          id: 'fallback-1',
+          title: 'Introduction to Programming',
+          description: 'Learn the basics of programming with JavaScript and Python.',
+          category: 'Programming',
+          level: 'Beginner',
+          price: 0,
+          instructorName: 'Tech Academy',
+          thumbnail: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop',
+          rating: 4.3,
+          totalRatings: 150,
+          enrolledStudents: 500
+        }
+      ];
+      setFeaturedCourses(fallbackCourses);
     } finally {
       setLoading(false);
     }
@@ -31,15 +142,18 @@ const LandingPage = () => {
 
   const fetchStats = async () => {
     try {
-      // Mock stats - you can implement actual API endpoints for these
+      // Fetch real stats from API endpoints
+      const statsResponse = await axios.get('/api/stats/platform');
+      setStats(statsResponse.data);
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      // Fallback to default stats if API fails
       setStats({
         totalCourses: 150,
         totalStudents: 2500,
         totalInstructors: 85,
         totalHours: 10000,
       });
-    } catch (error) {
-      console.error("Error fetching stats:", error);
     }
   };
 
@@ -257,10 +371,12 @@ const LandingPage = () => {
                         {/* Rating Display on Hover */}
                         <div className="course-rating-hover">
                           <div className="rating-stars-hover">
-                            {renderStars(course.rating || 0)}
+                            {renderStars(course.averageRating || course.rating || 0)}
                           </div>
                           <span className="rating-text-hover">
-                            {course.rating ? `${course.rating} (${course.totalRatings || 0})` : 'No ratings'}
+                            {(course.averageRating || course.rating) 
+                              ? `${course.averageRating || course.rating} (${course.totalRatings || 0})` 
+                              : 'No ratings'}
                           </span>
                         </div>
                         <Link to="/register" className="btn-preview">
