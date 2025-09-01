@@ -15,6 +15,7 @@ const StudentDashboard = ({ user }) => {
   const [activeTab, setActiveTab] = useState("browse");
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [featuredCourses, setFeaturedCourses] = useState([]);
+  const [liveClasses, setLiveClasses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -49,8 +50,25 @@ const StudentDashboard = ({ user }) => {
   useEffect(() => {
     if (activeTab === "browse") {
       fetchFeaturedCourses();
+    } else if (activeTab === "liveClasses") {
+      fetchLiveClasses();
+    } else if (activeTab === "enrolled") {
+      fetchEnrolledCourses();
     }
   }, [activeTab]);
+
+  // Initial load when component mounts
+  useEffect(() => {
+    // Load data based on the initial active tab
+    if (activeTab === "enrolled") {
+      fetchEnrolledCourses();
+    } else if (activeTab === "browse") {
+      fetchFeaturedCourses();
+    } else if (activeTab === "liveClasses") {
+      fetchLiveClasses();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on component mount
 
   // Also refresh enrolled courses when component mounts or when user navigates back
   useEffect(() => {
@@ -90,6 +108,15 @@ const StudentDashboard = ({ user }) => {
                   userRating: ratingData.userRating,
                   averageRating: ratingData.averageRating || course.rating,
                   totalRatings: ratingData.totalRatings || 0,
+                  isStaticCourse: ratingData.isStaticCourse || false,
+                };
+              } else {
+                // If rating fetch fails, return course with original rating
+                return {
+                  ...course,
+                  averageRating: course.rating,
+                  totalRatings: 0,
+                  isStaticCourse: course.id && course.id.toString().startsWith('static-'),
                 };
               }
             }
@@ -159,6 +186,30 @@ const StudentDashboard = ({ user }) => {
       setLoading(false);
     }
   };
+
+  const fetchLiveClasses = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("/api/live-class/student", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success) {
+        setLiveClasses(response.data.liveClasses || []);
+      } else {
+        setLiveClasses([]);
+      }
+    } catch (error) {
+      console.error("Error fetching live classes:", error);
+      setLiveClasses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredCourses = useMemo(() => {
     return featuredCourses.filter((course) => {
       const matchesSearch =
@@ -314,15 +365,20 @@ const StudentDashboard = ({ user }) => {
       const data = await response.json();
 
       if (response.ok) {
+        // Handle both database and static courses
+        const updatedCourseData = {
+          averageRating: data.averageRating,
+          totalRatings: data.totalRatings,
+          userRating: data.userRating,
+          rating: data.averageRating, // Keep backward compatibility
+        };
+
         // Update featured courses with backend response
         const updatedFeaturedCourses = featuredCourses.map((course) => {
           if ((course._id || course.id) === courseId) {
             return {
               ...course,
-              averageRating: data.averageRating,
-              totalRatings: data.totalRatings,
-              userRating: data.userRating,
-              rating: data.averageRating, // Keep backward compatibility
+              ...updatedCourseData,
             };
           }
           return course;
@@ -333,10 +389,7 @@ const StudentDashboard = ({ user }) => {
           if ((course._id || course.id) === courseId) {
             return {
               ...course,
-              averageRating: data.averageRating,
-              totalRatings: data.totalRatings,
-              userRating: data.userRating,
-              rating: data.averageRating, // Keep backward compatibility
+              ...updatedCourseData,
             };
           }
           return course;
@@ -383,6 +436,11 @@ const StudentDashboard = ({ user }) => {
       );
     }
     return stars;
+  };
+
+  const handleJoinLiveClass = (liveClass) => {
+    // Navigate to live class room
+    navigate(`/live-class/${liveClass._id}`);
   };
 
   const renderTabContent = () => {
@@ -712,6 +770,116 @@ const StudentDashboard = ({ user }) => {
         );
       case "assignments":
         return <StudentAssignments user={user} />;
+      case "liveClasses":
+        return (
+          <div className="live-classes">
+            <div className="live-classes-header">
+              <h3>Live Classes</h3>
+              <button
+                onClick={fetchLiveClasses}
+                className="btn-secondary btn-refresh"
+                disabled={loading}
+              >
+                {loading ? "⏳ Refreshing..." : "🔄 Refresh"}
+              </button>
+            </div>
+            {loading ? (
+              <div className="loading">Loading live classes...</div>
+            ) : liveClasses.length === 0 ? (
+              <div className="no-live-classes">
+                <h4>No Live Classes Available</h4>
+                <p>No live classes are scheduled for your enrolled courses at the moment.</p>
+                <p>Check back later or contact your instructors for updates.</p>
+              </div>
+            ) : (
+              <div className="live-classes-grid">
+                {liveClasses.map((liveClass) => (
+                  <div key={liveClass._id} className="live-class-card">
+                    <div className="live-class-header">
+                      <h4>{liveClass.title}</h4>
+                      <span className={`status-badge ${liveClass.status}`}>
+                        {liveClass.status === 'scheduled' ? '🕒 Scheduled' :
+                         liveClass.status === 'live' ? '🔴 Live Now' :
+                         liveClass.status === 'ended' ? '✅ Ended' : liveClass.status}
+                      </span>
+                    </div>
+                    
+                    <div className="live-class-info">
+                      <p className="course-name">
+                        <strong>Course:</strong> {liveClass.courseName || liveClass.course?.title || 'Unknown Course'}
+                      </p>
+                      <p className="instructor-name">
+                        <strong>Instructor:</strong> {liveClass.instructorName || 'Unknown Instructor'}
+                      </p>
+                      <p className="class-description">
+                        {liveClass.description || 'No description available'}
+                      </p>
+                    </div>
+
+                    <div className="live-class-schedule">
+                      <div className="schedule-info">
+                        <span className="schedule-date">
+                          📅 {new Date(liveClass.scheduledDate).toLocaleDateString()}
+                        </span>
+                        <span className="schedule-time">
+                          🕐 {new Date(liveClass.scheduledDate).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      <div className="duration">
+                        <span>⏱️ {liveClass.duration || 60} minutes</span>
+                      </div>
+                    </div>
+
+                    <div className="live-class-actions">
+                      {liveClass.status === 'live' ? (
+                        <button
+                          className="btn-join-live"
+                          onClick={() => handleJoinLiveClass(liveClass)}
+                        >
+                          🔴 Join Live Class
+                        </button>
+                      ) : liveClass.status === 'scheduled' ? (
+                        <button
+                          className="btn-join-scheduled"
+                          onClick={() => handleJoinLiveClass(liveClass)}
+                        >
+                          📝 View Class Details
+                        </button>
+                      ) : (
+                        <button
+                          className="btn-join-ended"
+                          disabled
+                        >
+                          ✅ Class Ended
+                        </button>
+                      )}
+                      
+                      {liveClass.recordingUrl && (
+                        <button
+                          className="btn-recording"
+                          onClick={() => window.open(liveClass.recordingUrl, '_blank')}
+                        >
+                          📹 View Recording
+                        </button>
+                      )}
+                    </div>
+
+                    {liveClass.status === 'scheduled' && (
+                      <div className="countdown-info">
+                        <small>
+                          Starts in: {Math.max(0, Math.ceil((new Date(liveClass.scheduledDate) - new Date()) / (1000 * 60 * 60 * 24)))} days
+                        </small>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
       default:
         return <CourseList user={user} />;
     }
@@ -750,6 +918,12 @@ const StudentDashboard = ({ user }) => {
           onClick={() => setActiveTab("assignments")}
         >
           Assignments
+        </button>
+        <button
+          className={`tab-btn ${activeTab === "liveClasses" ? "active" : ""}`}
+          onClick={() => setActiveTab("liveClasses")}
+        >
+          Live Classes
         </button>
       </div>
 

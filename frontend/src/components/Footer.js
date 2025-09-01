@@ -37,28 +37,31 @@ const Footer = () => {
 
     setSubmitting(true);
     try {
-      // Send email to eduplatform@gmail.com
-      const response = await fetch('/api/send-review', {
+      // Send review data to backend
+      const response = await fetch('http://localhost:5000/api/send-review', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...reviewData,
-          to: 'eduplatform@gmail.com',
-          subject: `Website Review from ${reviewData.name}`,
+          name: reviewData.name,
+          email: reviewData.email,
+          rating: reviewData.rating,
+          message: reviewData.feedback,
         }),
       });
 
       if (response.ok) {
-        setMessage("Thank you for your review! We appreciate your feedback.");
+        const result = await response.json();
+        setMessage(result.message || "Thank you for your review! We appreciate your feedback.");
         setReviewData({ name: "", email: "", rating: 0, feedback: "" });
         setTimeout(() => {
           setShowReviewModal(false);
           setMessage("");
-        }, 2000);
+        }, 3000);
       } else {
-        setMessage("Failed to send review. Please try again.");
+        const errorData = await response.json();
+        setMessage(errorData.error || "Failed to send review. Please try again.");
       }
     } catch (error) {
       console.error("Error sending review:", error);
@@ -74,7 +77,7 @@ const Footer = () => {
       stars.push(
         <span
           key={i}
-          className={`star ${i <= rating ? 'filled' : 'empty'} ${interactive ? 'interactive' : ''}`}
+          className={`star ${i <= rating ? 'filled' : ''}`}
           onClick={interactive ? () => handleRatingClick(i) : undefined}
         >
           ★
@@ -139,7 +142,7 @@ const Footer = () => {
             Share your experience and help us improve our platform!
           </p>
           <button
-            className="btn-review"
+            className="review-button"
             onClick={() => setShowReviewModal(true)}
           >
             ⭐ Write a Review
@@ -153,100 +156,83 @@ const Footer = () => {
 
       {/* Review Modal */}
       {showReviewModal && (
-        <div className="review-modal-overlay">
-          <div className="review-modal">
+        <div className="modal-overlay">
+          <div className="modal-content">
             <div className="modal-header">
               <h3>Review Our Website</h3>
+              <p>Your feedback helps us improve! Please share your experience with our platform.</p>
               <button
-                className="close-btn"
+                className="close-button"
                 onClick={() => setShowReviewModal(false)}
               >
                 ×
               </button>
             </div>
 
-            <div className="modal-content">
-              <p className="modal-description">
-                Your feedback helps us improve! Please share your experience with our platform.
-              </p>
+            <form className="review-form" onSubmit={handleSubmitReview}>
+              <div className="form-group">
+                <label htmlFor="name">Your Name *</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={reviewData.name}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Enter your full name"
+                />
+              </div>
 
-              <form onSubmit={handleSubmitReview}>
-                <div className="form-group">
-                  <label htmlFor="name">Your Name *</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={reviewData.name}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Enter your full name"
-                  />
-                </div>
+              <div className="form-group">
+                <label htmlFor="email">Your Email *</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={reviewData.email}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Enter your email address"
+                />
+              </div>
 
-                <div className="form-group">
-                  <label htmlFor="email">Your Email *</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={reviewData.email}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Enter your email address"
-                  />
+              <div className="star-rating">
+                <label>Overall Rating *</label>
+                <div className="stars">
+                  {renderStars(reviewData.rating, true)}
                 </div>
+                <span className="rating-text">
+                  {reviewData.rating > 0 ? `${reviewData.rating}/5` : "Click to rate"}
+                </span>
+              </div>
 
-                <div className="form-group">
-                  <label>Overall Rating *</label>
-                  <div className="rating-section">
-                    <div className="rating-stars">
-                      {renderStars(reviewData.rating, true)}
-                    </div>
-                    <span className="rating-text">
-                      {reviewData.rating > 0 ? `${reviewData.rating}/5` : "Click to rate"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="feedback">Your Feedback *</label>
-                  <textarea
-                    id="feedback"
-                    name="feedback"
-                    value={reviewData.feedback}
-                    onChange={handleInputChange}
-                    required
-                    rows="5"
-                    placeholder="Tell us about your experience with our platform..."
-                  />
-                </div>
-
-                <div className="modal-actions">
-                  <button
-                    type="button"
-                    onClick={() => setShowReviewModal(false)}
-                    className="btn-cancel"
-                    disabled={submitting}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn-submit"
-                    disabled={submitting}
-                  >
-                    {submitting ? "Sending..." : "Send Review"}
-                  </button>
-                </div>
-              </form>
+              <div className="form-group">
+                <label htmlFor="feedback">Your Feedback *</label>
+                <textarea
+                  id="feedback"
+                  name="feedback"
+                  value={reviewData.feedback}
+                  onChange={handleInputChange}
+                  required
+                  rows="5"
+                  placeholder="Tell us about your experience with our platform..."
+                />
+              </div>
 
               {message && (
-                <div className={`message ${message.includes('Thank you') ? 'success' : 'error'}`}>
+                <div className={`${message.includes('Thank you') ? 'success-message' : 'error-message'}`}>
                   {message}
                 </div>
               )}
-            </div>
+
+              <button
+                type="submit"
+                className="submit-button"
+                disabled={submitting}
+              >
+                {submitting ? <span className="loading">Sending Review</span> : "Send Review"}
+              </button>
+            </form>
           </div>
         </div>
       )}

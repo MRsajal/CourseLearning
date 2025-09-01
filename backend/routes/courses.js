@@ -462,6 +462,20 @@ router.post(
         });
       }
 
+      // Check if this is a static course (starts with "static-")
+      if (courseId.startsWith("static-")) {
+        // For static courses, we can't persist ratings to database
+        // But we can acknowledge the rating
+        return res.json({
+          message: "Thank you for rating this course! Note: Ratings for demo courses are not persistent.",
+          averageRating: Math.floor(Math.random() * 2) + 4, // Random 4-5 rating for demo
+          totalRatings: Math.floor(Math.random() * 100) + 10, // Random count for demo
+          userRating: rating,
+          isStaticCourse: true,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       const course = await Course.findById(courseId);
 
       if (!course) {
@@ -506,6 +520,7 @@ router.post(
         averageRating: course.averageRating,
         totalRatings: course.totalRatings,
         userRating: rating,
+        isStaticCourse: false,
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -528,6 +543,20 @@ router.get(
       const courseId = req.params.id;
       const userId = req.user.userId;
 
+      // Check if this is a static course (starts with "static-")
+      if (courseId.startsWith("static-")) {
+        // For static courses, we don't have persistent ratings in the database
+        // Return default values
+        return res.json({
+          userRating: null,
+          averageRating: null,
+          totalRatings: 0,
+          isStaticCourse: true,
+          message: "Static courses don't support persistent ratings",
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       const course = await Course.findById(courseId);
 
       if (!course) {
@@ -542,6 +571,7 @@ router.get(
         userRating: userRating ? userRating.rating : null,
         averageRating: course.averageRating,
         totalRatings: course.totalRatings,
+        isStaticCourse: false,
         timestamp: new Date().toISOString(),
       });
     } catch (error) {

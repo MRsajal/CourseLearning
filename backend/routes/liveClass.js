@@ -182,6 +182,66 @@ router.get("/course/:courseId", authenticateToken, async (req, res) => {
   }
 });
 
+// Get live classes for student's enrolled courses
+router.get("/student", authenticateToken, async (req, res) => {
+  try {
+    // First, get all courses the student is enrolled in
+    const enrolledCourses = await Course.find({
+      enrolledStudents: req.user.userId
+    }).select('_id title');
+
+    if (enrolledCourses.length === 0) {
+      return res.json({ 
+        success: true, 
+        liveClasses: [], 
+        message: "No enrolled courses found" 
+      });
+    }
+
+    const courseIds = enrolledCourses.map(course => course._id);
+
+    // Get all live classes for enrolled courses
+    const liveClasses = await LiveClass.find({
+      course: { $in: courseIds }
+    })
+      .populate("instructor", "name email")
+      .populate("course", "title")
+      .sort({ scheduledTime: -1 });
+
+    // Add status based on current time and activity
+    const now = new Date();
+    const enhancedLiveClasses = liveClasses.map(liveClass => {
+      let status = 'scheduled';
+      
+      if (liveClass.isActive) {
+        status = 'live';
+      } else if (liveClass.endTime || (liveClass.scheduledTime < now && !liveClass.isActive)) {
+        status = 'ended';
+      }
+
+      return {
+        ...liveClass.toObject(),
+        status,
+        courseName: liveClass.course.title,
+        instructorName: liveClass.instructor.name,
+        scheduledDate: liveClass.scheduledTime
+      };
+    });
+
+    res.json({ 
+      success: true, 
+      liveClasses: enhancedLiveClasses 
+    });
+  } catch (error) {
+    console.error("Error fetching student live classes:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error",
+      error: error.message 
+    });
+  }
+});
+
 // Get active live class for a course
 router.get("/active/:courseId", authenticateToken, async (req, res) => {
   try {
